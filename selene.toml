@@ -1,0 +1,9 @@
+std = "selenedef+testez"
+
+exclude = ["Packages/*", "**/*.d.luau"]
+
+[config]
+#
+
+[lints]
+shadowing = "allow"

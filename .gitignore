@@ -1,0 +1,20 @@
+# Project place file
+/liminal_generator.rbxlx
+/build.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+# Luau-lsp
+sourcemap.json
+
+# Rokit files
+rokit.lock
+
+# Wally files
+Packages
+wally.lock
+
+#vs code
+.vscode/
