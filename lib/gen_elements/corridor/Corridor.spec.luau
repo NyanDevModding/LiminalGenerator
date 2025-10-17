@@ -115,7 +115,6 @@ return function()
 			local collision2 = Vector3.new(3, 2, 7)
 
 			grid:set(collision1.X, collision1.Y, collision1.Z)
-			print(tostring(grid))
 			expect(corridor:getFirstCollision(grid)).to.equal(collision1)
 			grid:set(collision2.X, collision2.Y, collision2.Z)
 			expect(corridor:getFirstCollision(grid)).to.equal(collision2)
