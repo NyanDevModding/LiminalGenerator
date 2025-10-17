@@ -12,7 +12,7 @@ local function _createGridStorage(xSize, ySize, zSize): { { buffer } }
 		x[i] = table.create(ySize)
 		local y = x[i]
 
-		for i = 1, zSize, 1 do
+		for i = 1, ySize, 1 do
 			y[i] = buffer.create(zByteSize)
 		end
 	end
