@@ -6,4 +6,4 @@ realm = "shared"
 
 [dependencies]
 testez = "roblox/testez@0.4.1"
-# iris = "sirmallard/iris@2.4.1"
+iris = "sirmallard/iris@2.4.1"
