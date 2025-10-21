@@ -1,6 +1,6 @@
 local FlagGrid = require(script.Parent.Parent.Parent.gen_data.FlagGrid)
 local IRoomStorable = require(script.Parent.Parent.Parent.gen_data.storage.IRoomStorable)
-local AccessWrapper = require(script.Parent.Parent.access.AccessWrapper)
+local AccessData = require(script.Parent.Parent.Parent.gen_setting.access.AccessData)
 
 -- implements IRoomStorable
 local Corridor = {}
@@ -8,14 +8,9 @@ Corridor.__index = Corridor
 
 export type Corridor = typeof(Corridor.new())
 
-function Corridor.new(
-	firstAccessWrapper: AccessWrapper.AccessWrapper,
-	secondAccessWrapper: AccessWrapper.AccessWrapper
-)
-	local p1 = Vector3.new(firstAccessWrapper.x, firstAccessWrapper.y, firstAccessWrapper.z)
-		+ firstAccessWrapper.direction
-	local p2 = Vector3.new(secondAccessWrapper.x, secondAccessWrapper.y, secondAccessWrapper.z)
-		+ secondAccessWrapper.direction
+function Corridor.new(firstAccess: AccessData.AccessData, secondAccess: AccessData.AccessData)
+	local p1 = Vector3.new(firstAccess.x, firstAccess.y, firstAccess.z) + firstAccess.direction
+	local p2 = Vector3.new(secondAccess.x, secondAccess.y, secondAccess.z) + secondAccess.direction
 
 	if p1.Y ~= p2.Y then
 		warn(
@@ -25,9 +20,9 @@ function Corridor.new(
 	end
 
 	return setmetatable({
-		_adjacents = { firstAccessWrapper.wrappedRoom, secondAccessWrapper.wrappedRoom },
-		_firstAccessWrapper = firstAccessWrapper,
-		_secondAccessWrapper = secondAccessWrapper,
+		_adjacents = { firstAccess.wrappedRoom, secondAccess.wrappedRoom },
+		_firstAccess = firstAccess,
+		_secondAccess = secondAccess,
 		_vertices = { p1, p2 },
 	}, Corridor)
 end
@@ -45,22 +40,22 @@ function Corridor.setAdjacent(
 	self._adjacents[accessNumero] = adjacent
 
 	if accessNumero == 1 then
-		self._firstAccessWrapper = AccessWrapper.createAccessWrapper(
+		self._firstAccess = AccessData.createAccess(
 			adjacent,
 			adjacent:getAccess(otherAccessNumero),
-			self._firstAccessWrapper.x,
-			self._firstAccessWrapper.y,
-			self._firstAccessWrapper.z
+			self._firstAccess.x,
+			self._firstAccess.y,
+			self._firstAccess.z
 		)
 		return
 	end
 
-	self._secondAccessWrapper = AccessWrapper.createAccessWrapper(
+	self._secondAccess = AccessData.createAccess(
 		adjacent,
 		adjacent:getAccess(otherAccessNumero),
-		self._secondAccessWrapper.x,
-		self._secondAccessWrapper.y,
-		self._secondAccessWrapper.z
+		self._secondAccess.x,
+		self._secondAccess.y,
+		self._secondAccess.z
 	)
 end
 
@@ -191,19 +186,13 @@ end
 function Corridor.divide(
 	self: Corridor,
 	vertexNum: Vector3,
-	newEndAccessWrapper: AccessWrapper.AccessWrapper,
-	newStartAccessWrapper: AccessWrapper.AccessWrapper
+	newEndAccess: AccessData.AccessData,
+	newStartAccess: AccessData.AccessData
 )
-	local newStartAccessPos = Vector3.new(
-		newStartAccessWrapper.x,
-		newStartAccessWrapper.y,
-		newStartAccessWrapper.z
-	) + newStartAccessWrapper.direction
-	local newEndAccessPos = Vector3.new(
-		newEndAccessWrapper.x,
-		newEndAccessWrapper.y,
-		newEndAccessWrapper.z
-	) + newEndAccessWrapper.direction
+	local newStartAccessPos = Vector3.new(newStartAccess.x, newStartAccess.y, newStartAccess.z)
+		+ newStartAccess.direction
+	local newEndAccessPos = Vector3.new(newEndAccess.x, newEndAccess.y, newEndAccess.z)
+		+ newEndAccess.direction
 
 	-- Corridor mitosis PLUH
 	local vertex = self._vertices[vertexNum]
@@ -220,9 +209,9 @@ function Corridor.divide(
 				.. "with the vertices, got the accesse entrances: newEnd:{%i, %i, %i} and newStart:"
 				.. "{%i, %i, %i} and the vertices: vertex:{%i, %i, %i} and nextVertex:{%i, %i, %i}"
 			):format(
-				newStartAccessWrapper.x,
-				newStartAccessWrapper.y,
-				newStartAccessWrapper.z,
+				newStartAccess.x,
+				newStartAccess.y,
+				newStartAccess.z,
 				newStartAccessPos.x,
 				newStartAccessPos.y,
 				newStartAccessPos.z,
@@ -237,10 +226,10 @@ function Corridor.divide(
 	end
 
 	-- Create the new corridor that occupy the second part of this one
-	local newCorridor = Corridor.new(newStartAccessWrapper, self._secondAccessWrapper)
+	local newCorridor = Corridor.new(newStartAccess, self._secondAccess)
 
-	-- Change this secondAccessWrapper to be the new EndAccessWrapper
-	self._secondAccessWrapper = newEndAccessWrapper
+	-- Change this secondAccess to be the new EndAccess
+	self._secondAccess = newEndAccess
 	self._vertices[vertexNum] = newEndAccessPos
 	self._vertices[vertexNum + 1] = nil
 
@@ -263,11 +252,14 @@ function Corridor.divide(
 	return newCorridor
 end
 
+--TODO fill() fills the gap between two vertices wit hother vertices.
+function Corridor.fill(self: Corridor, vertexNum1: number, vertexNum2: number) end
+
 function Corridor.getAccess(self: Corridor, accessNum: number)
 	if accessNum == 1 then
-		return self._firstAccessWrapper
+		return self._firstAccess
 	end
-	return self._secondAccessWrapper
+	return self._secondAccess
 end
 
 return Corridor

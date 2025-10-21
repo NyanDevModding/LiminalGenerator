@@ -2,35 +2,35 @@ local Corridor = require(script.Parent.Corridor)
 
 local Directions = require(script.Parent.Parent.Parent.gen_data.Directions)
 local FlagGrid = require(script.Parent.Parent.Parent.gen_data.FlagGrid)
-local AccessWrapper = require(script.Parent.Parent.access.AccessWrapper)
-local WrappedRoom = require(script.Parent.Parent.Parent.gen_data.storage.WrappedRoom)
+local AccessData = require(script.Parent.Parent.Parent.gen_setting.access.AccessData)
 local Access = require(script.Parent.Parent.access.Access)
+local RoomData = require(script.Parent.Parent.Parent.gen_setting.room.RoomData)
 local Room = require(script.Parent.Parent.room.Room)
 
-local TEST_ACCESS_1 = Access.new(1, Vector3.new(0, 0, 0), Directions.EAST)
-local TEST_ACCESS_2 = Access.new(1, Vector3.new(0, 0, 0), Directions.WEST)
+local TEST_ACCESS_1 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.EAST)
+local TEST_ACCESS_2 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.WEST)
 
-local TEST_ROOM_1 = Room.new("test_1", Vector3.new(1, 1, 1), { TEST_ACCESS_1 })
-local TEST_ROOM_2 = Room.new("test_2", Vector3.new(1, 1, 1), { TEST_ACCESS_2 })
-local TEST_ROOM_3 = Room.new("test_2", Vector3.new(1, 1, 1), { TEST_ACCESS_1, TEST_ACCESS_2 })
+local TEST_ROOM_1 = RoomData.new("test_1", Vector3.new(1, 1, 1), { TEST_ACCESS_1 })
+local TEST_ROOM_2 = RoomData.new("test_2", Vector3.new(1, 1, 1), { TEST_ACCESS_2 })
+local TEST_ROOM_3 = RoomData.new("test_2", Vector3.new(1, 1, 1), { TEST_ACCESS_1, TEST_ACCESS_2 })
 
-local TEST_WRAPPED_1 = WrappedRoom.new(Vector3.new(1, 2, 8), TEST_ROOM_1)
-local TEST_WRAPPED_2 = WrappedRoom.new(Vector3.new(11, 2, 2), TEST_ROOM_2)
+local TEST_WRAPPED_1 = Room.new(Vector3.new(1, 2, 8), TEST_ROOM_1)
+local TEST_WRAPPED_2 = Room.new(Vector3.new(11, 2, 2), TEST_ROOM_2)
 
 return function()
-	local firstAccessWrapper: AccessWrapper.AccessWrapper = TEST_ACCESS_1:wrap(TEST_WRAPPED_1)
-	local secondAccessWrapper: AccessWrapper.AccessWrapper = TEST_ACCESS_2:wrap(TEST_WRAPPED_2)
+	local firstAccess: Access.Access = TEST_ACCESS_1:wrap(TEST_WRAPPED_1)
+	local secondAccess: Access.Access = TEST_ACCESS_2:wrap(TEST_WRAPPED_2)
 	local corridor: Corridor.Corridor
 
 	beforeEach(function()
-		corridor = Corridor.new(firstAccessWrapper, secondAccessWrapper)
+		corridor = Corridor.new(firstAccess, secondAccess)
 		corridor:addVertex(2)
 		corridor:setVertex(
 			2,
 			Vector3.new(
-				firstAccessWrapper.x + firstAccessWrapper.direction.X,
-				firstAccessWrapper.y + firstAccessWrapper.direction.Y,
-				secondAccessWrapper.z + secondAccessWrapper.direction.Z
+				firstAccess.x + firstAccess.direction.X,
+				firstAccess.y + firstAccess.direction.Y,
+				secondAccess.z + secondAccess.direction.Z
 			)
 		)
 	end)
@@ -38,8 +38,7 @@ return function()
 	describe("Corridor", function()
 		it("should return the pos of the first access for the position of the corridor", function()
 			expect(corridor:getPos()).to.equal(
-				Vector3.new(firstAccessWrapper.x, firstAccessWrapper.y, firstAccessWrapper.z)
-					+ firstAccessWrapper.direction
+				Vector3.new(firstAccess.x, firstAccess.y, firstAccess.z) + firstAccess.direction
 			)
 		end)
 		it("should handle adjacents rooms", function()
@@ -68,13 +67,10 @@ return function()
 		end)
 		it("should mododify a vertex pos", function()
 			corridor:addVertex(2)
-			corridor:setVertex(
-				2,
-				Vector3.new(firstAccessWrapper.x, firstAccessWrapper.y, secondAccessWrapper.z + 2)
-			)
+			corridor:setVertex(2, Vector3.new(firstAccess.x, firstAccess.y, secondAccess.z + 2))
 
 			expect(corridor:getVertex(2)).to.equal(
-				Vector3.new(firstAccessWrapper.x, firstAccessWrapper.y, secondAccessWrapper.z + 2)
+				Vector3.new(firstAccess.x, firstAccess.y, secondAccess.z + 2)
 			)
 		end)
 		it("should be able to invert a vertex", function()
@@ -82,9 +78,9 @@ return function()
 
 			expect(corridor:getVertex(2)).to.equal(
 				Vector3.new(
-					secondAccessWrapper.x + secondAccessWrapper.direction.X,
-					firstAccessWrapper.y + firstAccessWrapper.direction.Y,
-					firstAccessWrapper.z + firstAccessWrapper.direction.Z
+					secondAccess.x + secondAccess.direction.X,
+					firstAccess.y + firstAccess.direction.Y,
+					firstAccess.z + firstAccess.direction.Z
 				)
 			)
 		end)
@@ -152,17 +148,15 @@ return function()
 			expect(corridor:isIncludingCell(c3)).to.equal(true)
 		end)
 		it("should be able to divide itself into two corridor", function()
-			local newEndAccessWrapper =
-				AccessWrapper.createAccessWrapper(TEST_ROOM_3, TEST_ACCESS_2, 6, 2, 2)
-			local newStartAccessWrapper =
-				AccessWrapper.createAccessWrapper(TEST_ROOM_3, TEST_ACCESS_1, 6, 2, 2)
+			local newEndAccess = Access.createAccess(TEST_ROOM_3, TEST_ACCESS_2, 6, 2, 2)
+			local newStartAccess = Access.createAccess(TEST_ROOM_3, TEST_ACCESS_1, 6, 2, 2)
 
 			corridor:addVertex(3)
 			corridor:addVertex(4)
 			corridor:setVertex(3, Vector3.new(5, 2, 2))
 			corridor:setVertex(4, Vector3.new(7, 2, 2))
 
-			local secondCorridor = corridor:divide(3, newEndAccessWrapper, newStartAccessWrapper)
+			local secondCorridor = corridor:divide(3, newEndAccess, newStartAccess)
 			expect(corridor:getVertex(1)).to.equal(Vector3.new(3, 2, 8))
 			expect(corridor:getVertex(2)).to.equal(Vector3.new(3, 2, 2))
 			expect(corridor:getVertex(3)).to.equal(Vector3.new(5, 2, 2))
@@ -171,8 +165,8 @@ return function()
 			expect(secondCorridor:getVertex(2)).to.equal(Vector3.new(9, 2, 2))
 		end)
 		it("should return one of its accesses", function()
-			expect(corridor:getAccess(1)).to.equal(firstAccessWrapper)
-			expect(corridor:getAccess(2)).to.equal(secondAccessWrapper)
+			expect(corridor:getAccess(1)).to.equal(firstAccess)
+			expect(corridor:getAccess(2)).to.equal(secondAccess)
 		end)
 	end)
 end

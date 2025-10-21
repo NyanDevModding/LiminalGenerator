@@ -1,46 +1,25 @@
-local AccessWrapper = require(script.Parent.AccessWrapper)
-local Directions = require(script.Parent.Parent.Parent.gen_data.Directions)
-local WrappedRoom = require(script.Parent.Parent.Parent.gen_data.storage.WrappedRoom)
+local IRoomStorable = require(script.Parent.Parent.Parent.gen_data.storage.IRoomStorable)
+local IAccessData = require(script.Parent.Parent.Parent.gen_setting.access.IAccessData)
 
-local Access = {}
-Access.__index = Access
-
-export type Access = typeof(Access.new())
-
-function Access.new(accessType: number, relativePos: Vector3, direction: Directions.Direction)
-	return setmetatable({
-		_accessType = accessType,
-		_relativePos = relativePos,
-		_direction = direction,
-	}, Access)
+local function createAccess(
+	wrappedRoom: IRoomStorable.IRoomStorable,
+	access: IAccessData.IAccessData,
+	x: number,
+	y: number,
+	z: number
+)
+	return {
+		wrappedRoom = wrappedRoom,
+		access = access,
+		x = x,
+		y = y,
+		z = z,
+		direction = access:getDirection(),
+	}
 end
 
-function Access.getAccessType(self: Access)
-	return self._accessType
-end
+export type Access = typeof(createAccess())
 
-function Access.getRelativePosition(self: Access)
-	return self._relativePos
-end
-
-function Access.getRelativeEntrancePos(self: Access)
-	return self._relativePos + self._direction
-end
-
-function Access.getDirection(self: Access)
-	return self._direction
-end
-
-function Access.wrap(self: Access, wrappedRoom: WrappedRoom.WrappedRoom)
-	local accessPos = wrappedRoom:getPos() + self:getRelativePosition() + self._direction
-
-	return AccessWrapper.createAccessWrapper(
-		wrappedRoom,
-		self,
-		accessPos.X,
-		accessPos.Y,
-		accessPos.Z
-	)
-end
-
-return Access
+return {
+	createAccess = createAccess,
+}
