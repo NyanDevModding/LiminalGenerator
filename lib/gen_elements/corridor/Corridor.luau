@@ -20,7 +20,7 @@ function Corridor.new(firstAccess: AccessData.AccessData, secondAccess: AccessDa
 	end
 
 	return setmetatable({
-		_adjacents = { firstAccess.wrappedRoom, secondAccess.wrappedRoom },
+		_adjacents = { firstAccess.room, secondAccess.room },
 		_firstAccess = firstAccess,
 		_secondAccess = secondAccess,
 		_vertices = { p1, p2 },

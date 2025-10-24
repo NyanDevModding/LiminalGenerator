@@ -1,4 +1,4 @@
-export type Direction = number
+export type Direction = Vector3
 
 return {
 	EAST = Vector3.new(1, 0, 0),
