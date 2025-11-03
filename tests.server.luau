@@ -6,7 +6,7 @@ local TestEZ = require(ReplicatedStorage.Packages.testez)
 --* this will create weird results different from those in the studio console
 
 TestEZ.TestBootstrap:run({
-	ReplicatedStorage.Shared,
+	ReplicatedStorage.LiminalGenerator,
 	nil,
 	{
 		noXpcallByDefault = true,
