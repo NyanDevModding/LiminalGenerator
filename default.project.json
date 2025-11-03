@@ -2,8 +2,7 @@
   "name": "LiminalGenerator",
   "globIgnorePaths": [
     "**/*.spec.luau",
-    "**/*.spec.lua",
-    "lib/algorithm/corridor_connection/debug"
+    "**/*.spec.lua"
   ],
   "tree": {
     "$className": "DataModel",

@@ -2,33 +2,41 @@
   "name": "LiminalGenerator",
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
       "LiminalGenerator": {
         "$path": "lib"
+      },
+      "Test": {
+        "$path": "test"
+      },
+      "TestAssets": {
+        "$path": "test_assets"
       },
       "Packages": {
         "$path": "Packages"
       }
     },
-
     "ServerScriptService": {
       "tests": {
         "$path": "tests.server.luau"
       }
     },
-
-
-		"TestService": {
-			"$properties": {
-				"ExecuteWithStudioRun": true
-			},
-			"$className": "TestService",
-			"run": {
-				"$path": "tests.server.luau"
-			}
-		},
-
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "tests": {
+          "$path": "tests.client.luau"
+        }
+      }
+    },
+    "TestService": {
+      "$properties": {
+        "ExecuteWithStudioRun": true
+      },
+      "$className": "TestService",
+      "run": {
+        "$path": "tests.server.luau"
+      }
+    },
     "Workspace": {
       "$properties": {
         "FilteringEnabled": true
