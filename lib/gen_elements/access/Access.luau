@@ -4,6 +4,7 @@ local IAccessData = require(script.Parent.Parent.Parent.gen_setting.access.IAcce
 local function createAccess(
 	room: IRoomStorable.IRoomStorable,
 	access: IAccessData.IAccessData,
+	-- The pos of the access
 	x: number,
 	y: number,
 	z: number

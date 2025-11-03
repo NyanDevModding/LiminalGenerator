@@ -2,7 +2,7 @@ local IAccessData = require(script.Parent.Parent.Parent.gen_setting.access.IAcce
 
 export type IRoomStorable = {
 	getPos: (self: IRoomStorable) -> Vector3,
-	getAccess: (self: IRoomStorable, accessNumero: number) -> IAccessData.IAccessData,
+	getAccessData: (self: IRoomStorable, accessNumero: number) -> IAccessData.IAccessData,
 	setAdjacent: (
 		self: IRoomStorable,
 		adjacent: IRoomStorable,
