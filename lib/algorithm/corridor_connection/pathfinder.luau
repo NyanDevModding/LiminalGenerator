@@ -1,5 +1,5 @@
 local Directions = require(script.Parent.Parent.Parent.gen_data.Directions)
-local FlagGrid = require(script.Parent.Parent.Parent.gen_data.FlagGrid)
+local IReadableGrid = require(script.Parent.Parent.Parent.gen_data.IReadableGrid)
 local Access = require(script.Parent.Parent.Parent.gen_elements.access.Access)
 local Corridor = require(script.Parent.Parent.Parent.gen_elements.corridor.Corridor)
 
@@ -7,9 +7,10 @@ local Corridor = require(script.Parent.Parent.Parent.gen_elements.corridor.Corri
 local MAX_BASE_VERTEX_SEARCH_AREA = Vector3.new(5, 5, 5)
 
 return function(
-	roomGrid: FlagGrid.FlagGrid,
+	grid: IReadableGrid.IReadableGrid,
 	firstAccess: Access.Access,
 	secondAccess: Access.Access,
+	bfsDirectionsOrder: { Directions.Direction },
 	debugMode: boolean
 ): Corridor.Corridor?
 	-- BFS algorithm
@@ -24,48 +25,37 @@ return function(
 	searchMin = Vector3.new(
 		if searchMin.X < 1
 			then 1
-			else (if searchMin.X > roomGrid:getXSize()
-				then roomGrid:getXSize()
-				else searchMin.X),
+			else (if searchMin.X > grid:getXSize() then grid:getXSize() else searchMin.X),
 		if searchMin.Y < 1
 			then 1
-			else (if searchMin.Y > roomGrid:getYSize()
-				then roomGrid:getYSize()
-				else searchMin.Y),
+			else (if searchMin.Y > grid:getYSize() then grid:getYSize() else searchMin.Y),
 		if searchMin.Z < 1
 			then 1
-			else (if searchMin.Z > roomGrid:getXSize()
-				then roomGrid:getZSize()
-				else searchMin.Z)
+			else (if searchMin.Z > grid:getXSize() then grid:getZSize() else searchMin.Z)
 	)
 	searchMax = Vector3.new(
 		if searchMax.X < 1
 			then 1
-			else (if searchMax.X > roomGrid:getXSize()
-				then roomGrid:getXSize()
-				else searchMax.X),
+			else (if searchMax.X > grid:getXSize() then grid:getXSize() else searchMax.X),
 		if searchMax.Y < 1
 			then 1
-			else (if searchMax.Y > roomGrid:getYSize()
-				then roomGrid:getYSize()
-				else searchMax.Y),
+			else (if searchMax.Y > grid:getYSize() then grid:getYSize() else searchMax.Y),
 		if searchMax.Z < 1
 			then 1
-			else (if searchMax.Z > roomGrid:getXSize()
-				then roomGrid:getZSize()
-				else searchMax.Z)
+			else (if searchMax.Z > grid:getXSize() then grid:getZSize() else searchMax.Z)
 	)
 
 	local vertexQueue: { Vector3 } = { firstPos }
 	local visitedStack: { Vector3 } = {}
 	local parentDict = {}
 
-	local directions = {
-		Directions.NORTH,
-		Directions.WEST,
-		Directions.SOUTH,
-		Directions.EAST,
-	}
+	bfsDirectionsOrder = bfsDirectionsOrder
+		or {
+			Directions.NORTH,
+			Directions.WEST,
+			Directions.SOUTH,
+			Directions.EAST,
+		}
 
 	while vertexQueue[1] ~= nil do
 		local vertex = vertexQueue[1]
@@ -77,7 +67,7 @@ return function(
 		end
 
 		for i = 1, 4, 1 do
-			local direction = directions[i]
+			local direction = bfsDirectionsOrder[i]
 			local otherVertex = vertex + direction
 
 			if
@@ -87,7 +77,7 @@ return function(
 				or otherVertex.X > searchMax.X
 				or otherVertex.Y > searchMax.Y
 				or otherVertex.Z > searchMax.Z
-				or roomGrid:get(otherVertex.X, otherVertex.Y, otherVertex.Z) == 1
+				or grid:get(otherVertex.X, otherVertex.Y, otherVertex.Z) == 1
 			then
 				continue
 			end
