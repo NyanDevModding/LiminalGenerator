@@ -36,6 +36,10 @@ function RoomData.getAccessData(self: RoomData, accessNum: number)
 	return self._accessesData[accessNum]
 end
 
+function RoomData.getAccessRelativePos(self: RoomData, accessNum: number)
+	return self._accessesData[accessNum]:getRelativePosition()
+end
+
 function RoomData.getAccessRelativeEntrancePos(self: RoomData, accessNum: number)
 	return self._accessesData[accessNum]:getRelativeEntrancePos()
 end
