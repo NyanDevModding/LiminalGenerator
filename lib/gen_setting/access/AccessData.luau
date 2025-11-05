@@ -32,7 +32,7 @@ function AccessData.getDirection(self: AccessData)
 end
 
 function AccessData.wrap(self: AccessData, room: Room.Room)
-	local accessPos = room:getPos() + self:getRelativePosition() + self._direction
+	local accessPos = room:getPos() + self:getRelativePosition()
 
 	return Access.createAccess(room, self, accessPos.X, accessPos.Y, accessPos.Z)
 end
