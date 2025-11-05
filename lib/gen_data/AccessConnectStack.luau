@@ -1,3 +1,4 @@
+local FlagGrid = require(script.Parent.FlagGrid)
 local Access = require(script.Parent.Parent.gen_elements.access.Access)
 local Room = require(script.Parent.Parent.gen_elements.room.Room)
 
@@ -7,10 +8,11 @@ AccessConnectStack.__index = AccessConnectStack
 export type AccessConnectStack = typeof(AccessConnectStack.new())
 
 --TODO make the accessStack ordered by distance between accesses
-function AccessConnectStack.new()
+function AccessConnectStack.new(xSize, ySize, zSize)
 	return setmetatable({
 		_stack = {} :: { Access.Access },
 		_size = 0,
+		_flagGrid = FlagGrid.new(xSize, ySize, zSize) :: FlagGrid.FlagGrid,
 	}, AccessConnectStack)
 end
 
@@ -25,6 +27,7 @@ end
 function AccessConnectStack.push(self: AccessConnectStack, access: Access.Access)
 	self._size += 1
 	self._stack[self._size] = access
+	self._flagGrid:set(access.x, access.y, access.z)
 end
 
 function AccessConnectStack.pop(self: AccessConnectStack): Access.Access?
@@ -35,6 +38,7 @@ function AccessConnectStack.pop(self: AccessConnectStack): Access.Access?
 	local popped = self._stack[self._size]
 	self._stack[self._size] = nil
 	self._size -= 1
+	self._flagGrid:reset(popped.x, popped.y, popped.z)
 	return popped
 end
 
@@ -57,10 +61,19 @@ function AccessConnectStack.popRoomDifferent(
 		self._stack[i] = self._stack[self._size]
 		self._stack[self._size] = nil
 		self._size -= 1
+		self._flagGrid:reset(result.x, result.y, result.z)
 		break
 	end
 
 	return result
+end
+
+function AccessConnectStack.getGrid(self: AccessConnectStack)
+	return self._flagGrid
+end
+
+function AccessConnectStack.iterate(self: AccessConnectStack)
+	return ipairs(self._stack)
 end
 
 return AccessConnectStack
