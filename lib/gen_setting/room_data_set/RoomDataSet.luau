@@ -42,42 +42,62 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 		local roomData = RoomData.new(roomJson.name, roomJson.size, accessDatas, chanceToSpawn)
 		table.insert(roomList, roomData)
 
+		print("Room: " .. roomJson.name)
+		print("Rotated 0 times")
+		print("Size: " .. tostring(roomJson.size))
+		print("Access data: ")
+		print(accessDatas)
+		print("\n")
+
 		if roomJson.rotate_y == false then
 			continue
 		end
 
 		-- Handle the room rotation and create 3 other room for the 3 other directions
-		local previousRoomSize = roomJson.size
+		local roomBaseSize = roomJson.size
 		local rotationMatrix = CFrame.Angles(0, 0, 0)
 
 		-- Iterate the 3 directions: WEST, SOUTH, EAST
-		for _ = 1, 3, 1 do
-			rotationMatrix = rotationMatrix * CFrame.Angles(0, math.pi / 2, 0)
+		for rotationNum = 1, 3, 1 do
+			rotationMatrix = rotationMatrix * CFrame.fromEulerAnglesYXZ(0, -math.pi / 2, 0)
 
-			-- Invert the size of the room, as it is a rectangle, we dont have
-			-- to bother ourselves with tricky rotation calculation
-			local newRoomSize =
-				Vector3.new(previousRoomSize.Z, previousRoomSize.Y, previousRoomSize.X)
-			previousRoomSize = newRoomSize
+			-- We shouldn't use CFrame
+			local newRoomSize = rotationMatrix * roomBaseSize
+			newRoomSize = Vector3.new(
+				math.abs(math.round(newRoomSize.X)),
+				math.abs(math.round(newRoomSize.Y)),
+				math.abs(math.round(newRoomSize.Z))
+			)
+			local newRoomCenter = (newRoomSize + Vector3.new(1, 0, 1)) / 2
 
 			-- Rotate the room accesses
 			local newRoomAccessDataJson = table.clone(roomJson.accesses)
 
 			--TODO do it without CFrame
 			for i, accessData in ipairs(roomJson.accesses) do
-				newRoomAccessDataJson[i].position = rotationMatrix * accessData.position
+				local accessDataPos = accessData.position + Vector3.new(0.5, 0, 0.5)
+				local centerRelativePos = accessDataPos - newRoomCenter
 
-				-- Choose the new direction
-				local accessDirection = accessData.direction
-				if accessDirection == Directions.NORTH then
-					newRoomAccessDataJson[i].direction = Directions.WEST
-				elseif accessDirection == Directions.WEST then
-					newRoomAccessDataJson[i].direction = Directions.SOUTH
-				elseif accessDirection == Directions.SOUTH then
-					newRoomAccessDataJson[i].direction = Directions.EAST
-				elseif accessDirection == Directions.EAST then
-					newRoomAccessDataJson[i].direction = Directions.NORTH
-				end
+				local centerRelativeRotatedPos = rotationMatrix * centerRelativePos
+				local nonRelativePos = centerRelativeRotatedPos
+					+ newRoomCenter
+					- Vector3.new(0.5, 0, 0.5)
+
+				local pos = Vector3.new(
+					math.round(nonRelativePos.X),
+					math.round(nonRelativePos.Y),
+					math.round(nonRelativePos.Z)
+				)
+				newRoomAccessDataJson[i].position = pos
+
+				-- Calculate the new direction
+				local direction = rotationMatrix * accessData.direction
+				direction = Vector3.new(
+					math.round(direction.X),
+					math.round(direction.Y),
+					math.round(direction.Z)
+				)
+				newRoomAccessDataJson[i].direction = direction
 			end
 
 			local newRoomAccessData = {}
@@ -85,6 +105,13 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 				newRoomAccessData[accessNum] =
 					AccessData.new(accessJson.type, accessJson.position, accessJson.direction)
 			end
+
+			print("Room: " .. roomJson.name)
+			print("Rotated " .. tostring(rotationNum) .. " times")
+			print("Size: " .. tostring(newRoomSize))
+			print("Access data: ")
+			print(newRoomAccessData)
+			print("\n")
 
 			local rotatedRoomData =
 				RoomData.new(roomJson.name, newRoomSize, newRoomAccessData, chanceToSpawn)
