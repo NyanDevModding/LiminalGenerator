@@ -106,9 +106,10 @@ function DisplayUtils.createSelective2dGrid(
 	worldPos: Vector3,
 	cellSize: number,
 	transparency: number,
+	color1: Color3,
 	yLayer: number?
 )
-	local COLOR_1 = Color3.new(0.019608, 0.47451, 0.058824)
+	color1 = color1 or Color3.new(0.019608, 0.47451, 0.058824)
 
 	transparency = transparency or 1
 	yLayer = yLayer or 1
@@ -126,7 +127,7 @@ function DisplayUtils.createSelective2dGrid(
 			local part = DisplayUtils.createGridPart(cellSize)
 			part.Name = tostring(i) .. "_" .. tostring(j)
 			part.Position = worldPos + Vector3.new(i * cellSize, 0, -j * cellSize)
-			part.Color = COLOR_1
+			part.Color = color1
 			part.Transparency = transparency
 			part.Parent = folder
 		end
