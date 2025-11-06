@@ -27,7 +27,8 @@ end
 function AccessConnectStack.push(self: AccessConnectStack, access: Access.Access)
 	self._size += 1
 	self._stack[self._size] = access
-	self._flagGrid:set(access.x, access.y, access.z)
+	local direction = access.direction
+	self._flagGrid:set(access.x + direction.X, access.y + direction.Y, access.z + direction.Z)
 end
 
 function AccessConnectStack.pop(self: AccessConnectStack): Access.Access?
@@ -38,7 +39,8 @@ function AccessConnectStack.pop(self: AccessConnectStack): Access.Access?
 	local popped = self._stack[self._size]
 	self._stack[self._size] = nil
 	self._size -= 1
-	self._flagGrid:reset(popped.x, popped.y, popped.z)
+	local direction = popped.direction
+	self._flagGrid:reset(popped.x + direction.X, popped.y + direction.Y, popped.z + direction.Z)
 	return popped
 end
 
@@ -61,7 +63,8 @@ function AccessConnectStack.popRoomDifferent(
 		self._stack[i] = self._stack[self._size]
 		self._stack[self._size] = nil
 		self._size -= 1
-		self._flagGrid:reset(result.x, result.y, result.z)
+		local direction = result.direction
+		self._flagGrid:reset(result.x + direction.X, result.y + direction.Y, result.z + direction.Z)
 		break
 	end
 
