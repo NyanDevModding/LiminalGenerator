@@ -13,8 +13,16 @@ Corridor.__index = Corridor
 export type Corridor = typeof(Corridor.new())
 
 function Corridor.new(firstAccess: Access.Access, secondAccess: Access.Access)
-	local p1 = Vector3.new(firstAccess.x, firstAccess.y, firstAccess.z)
-	local p2 = Vector3.new(secondAccess.x, secondAccess.y, secondAccess.z)
+	local p1 = Vector3.new(
+		firstAccess.x + firstAccess.direction.X,
+		firstAccess.y + firstAccess.direction.Y,
+		firstAccess.z + firstAccess.direction.Z
+	)
+	local p2 = Vector3.new(
+		secondAccess.x + secondAccess.direction.X,
+		secondAccess.y + secondAccess.direction.Y,
+		secondAccess.z + secondAccess.direction.Z
+	)
 
 	if p1.Y ~= p2.Y then
 		warn(
@@ -68,6 +76,30 @@ function Corridor.getAccessData(self: Corridor, accessNumero: number)
 	end
 
 	return self._secondAccess
+end
+
+-- Used when the Corridor is about to change to create the access to bind
+-- something else to the room this access is currently bound to.
+function Corridor.createAccess(self: Corridor, accessNumero: number)
+	if accessNumero == 1 then
+		local accessPos = self._adjacents[1]:getPos() + self._firstAccess:getRelativePosition()
+		return Access.createAccess(
+			self._adjacents[1],
+			self._firstAccess,
+			accessPos.X,
+			accessPos.Y,
+			accessPos.Z
+		)
+	end
+
+	local accessPos = self._adjacents[2]:getPos() + self._secondAccess:getRelativePosition()
+	return Access.createAccess(
+		self._adjacents[2],
+		self._secondAccess,
+		accessPos.X,
+		accessPos.Y,
+		accessPos.Z
+	)
 end
 
 function Corridor.setAdjacent(
@@ -131,15 +163,27 @@ function Corridor.isIncludingCell(self: Corridor, cellPos: Vector3)
 
 	-- Check for the last vertex
 	local vertex = self:getVertex(self:getVertexAmount())
+	local min, max =
+		Vector3.new(
+			math.min(previousVertex.X, vertex.X),
+			math.min(previousVertex.Y, vertex.Y),
+			math.min(previousVertex.Z, vertex.Z)
+		),
+		Vector3.new(
+			math.max(previousVertex.X, vertex.X),
+			math.max(previousVertex.Y, vertex.Y),
+			math.max(previousVertex.Z, vertex.Z)
+		)
+
 	if
-		(previousVertex.X > cellPos.X or cellPos.X > vertex.X)
-		or (previousVertex.Y > cellPos.Y or cellPos.Y > vertex.Y)
-		or (previousVertex.Z > cellPos.Z or cellPos.Z > vertex.Z)
+		(min.X <= cellPos.X and cellPos.X <= max.X)
+		and (min.Y <= cellPos.Y and cellPos.Y <= max.Y)
+		and (min.Z <= cellPos.Z and cellPos.Z <= max.Z)
 	then
-		return false
+		return true
 	end
 
-	return true
+	return false
 end
 
 function Corridor.getVertex(self: Corridor, vertexNum: number)
@@ -264,10 +308,90 @@ function Corridor.getFirstCollision(self: Corridor, flagGrid: FlagGrid.FlagGrid)
 	return nil
 end
 
---TODO
-function Corridor.getFirstCollisionWith(self: Corridor, otherCorridor: Corridor) end
+local function _intersectWithVerticalLine(self: Corridor, firstPos: Vector3, length: number)
+	local previousVertex = self:getVertex(1)
+	for _, vertex in self:iterateMiddleVertices() do
+		-- Check if it intersects with the line
+		if
+			firstPos.Z <= vertex.Z
+			and vertex.Z <= firstPos.Z + length
+			and previousVertex.X <= firstPos.X
+			and firstPos.X <= vertex.X
+		then
+			return Vector3.new(firstPos.X, vertex.Y, vertex.Z)
+		end
+		previousVertex = vertex
+	end
 
---TODO
+	local vertex = self:getVertex(self:getVertexAmount())
+	if
+		firstPos.Z <= vertex.Z
+		and vertex.Z <= firstPos.Z + length
+		and previousVertex.X <= firstPos.X
+		and firstPos.X <= vertex.X
+	then
+		return Vector3.new(firstPos.X, vertex.Y, vertex.Z)
+	end
+	previousVertex = vertex
+
+	return nil
+end
+
+local function _intersectWithHorizontalLine(self: Corridor, firstPos: Vector3, length: number)
+	local previousVertex = self:getVertex(1)
+	for _, vertex in self:iterateMiddleVertices() do
+		-- Check if it intersects with the line
+		if
+			firstPos.X <= vertex.X
+			and vertex.X <= firstPos.X + length
+			and previousVertex.Z <= firstPos.Z
+			and firstPos.Z <= vertex.Z
+		then
+			return Vector3.new(vertex.X, vertex.Y, firstPos.Z)
+		end
+		previousVertex = vertex
+	end
+
+	local vertex = self:getVertex(self:getVertexAmount())
+	if
+		firstPos.X <= vertex.X
+		and vertex.X <= firstPos.X + length
+		and previousVertex.Z <= firstPos.Z
+		and firstPos.Z <= vertex.Z
+	then
+		return Vector3.new(vertex.X, vertex.Y, firstPos.Z)
+	end
+	previousVertex = vertex
+
+	return nil
+end
+
+-- TODO add in spec
+function Corridor.getFirstCollisionWith(self: Corridor, otherCorridor: Corridor)
+	local otherPreviousVertex = otherCorridor:getVertex(1)
+
+	for _, otherVertex in otherCorridor:iterateMiddleVertices() do
+		local line = otherVertex - otherPreviousVertex
+		local firstPos = Vector3.new(math.abs(line.X), math.abs(line.Y), math.abs(line.Z))
+
+		local intersection = nil
+		if firstPos.X == 0 then
+			intersection = _intersectWithVerticalLine(self, firstPos, line.Magnitude)
+		else
+			intersection = _intersectWithHorizontalLine(self, firstPos, line.Magnitude)
+		end
+
+		if intersection ~= nil then
+			return intersection
+		end
+
+		otherPreviousVertex = otherVertex
+	end
+
+	return nil
+end
+
+--TODO code and add to spec
 function Corridor.getFirstVertexBefore(self: Corridor, pos: Vector3) end
 
 -- The vertexNum is the numero of the vertex that is transformed into the end
@@ -280,17 +404,31 @@ function Corridor.divide(
 	newEndAccess: Access.Access,
 	newStartAccess: Access.Access
 )
-	local newStartAccessPos = Vector3.new(newStartAccess.x, newStartAccess.y, newStartAccess.z)
-	local newEndAccessPos = Vector3.new(newEndAccess.x, newEndAccess.y, newEndAccess.z)
+	local newStartAccessPos = Vector3.new(
+		newStartAccess.x + newStartAccess.direction.X,
+		newStartAccess.y + newStartAccess.direction.Y,
+		newStartAccess.z + newStartAccess.direction.Z
+	)
+	local newEndAccessPos = Vector3.new(
+		newEndAccess.x + newEndAccess.direction.X,
+		newEndAccess.y + newEndAccess.direction.Y,
+		newEndAccess.z + newEndAccess.direction.Z
+	)
 
 	-- Corridor mitosis PLUH
 	local vertex = self._vertices[vertexNum]
 	local nextVertex = self._vertices[vertexNum + 1]
 	-- Check if the both the accesses are included between the vertex and the next one.
 	if
-		(newEndAccessPos.x > nextVertex.X and newStartAccessPos.x < vertex.X)
-		and (newEndAccessPos.y > nextVertex.Y and newStartAccessPos.y < vertex.Y)
-		and (newEndAccessPos.z > nextVertex.Z and newStartAccessPos.z < vertex.Z)
+		(
+			newEndAccessPos.x + newEndAccess.direction.X > nextVertex.X
+			and newStartAccessPos.x + newStartAccess.direction.X < vertex.X
+		)
+		and (newEndAccessPos.y + newEndAccess.direction.Y > nextVertex.Y and newStartAccessPos.y + newStartAccess.direction.Y < vertex.Y)
+		and (
+			newEndAccessPos.z + newEndAccess.direction.Z > nextVertex.Z
+			and newStartAccessPos.z + newStartAccess.direction.Z < vertex.Z
+		)
 	then
 		error(
 			(
@@ -298,12 +436,12 @@ function Corridor.divide(
 				.. "with the vertices, got the accesse entrances: newEnd:{%i, %i, %i} and newStart:"
 				.. "{%i, %i, %i} and the vertices: vertex:{%i, %i, %i} and nextVertex:{%i, %i, %i}"
 			):format(
-				newStartAccess.x,
-				newStartAccess.y,
-				newStartAccess.z,
-				newStartAccessPos.x,
-				newStartAccessPos.y,
-				newStartAccessPos.z,
+				newStartAccess.x + newStartAccess.direction.X,
+				newStartAccess.y + newStartAccess.direction.Y,
+				newStartAccess.z + newStartAccess.direction.Z,
+				newStartAccessPos.x + newStartAccess.direction.X,
+				newStartAccessPos.y + newStartAccess.direction.Y,
+				newStartAccessPos.z + newStartAccess.direction.Z,
 				vertex.X,
 				vertex.Y,
 				vertex.Z,

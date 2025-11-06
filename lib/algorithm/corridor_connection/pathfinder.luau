@@ -14,8 +14,16 @@ return function(
 	debugMode: boolean
 ): Corridor.Corridor?
 	-- BFS algorithm
-	local firstPos = Vector3.new(firstAccess.x, firstAccess.y, firstAccess.z)
-	local secondPos = Vector3.new(secondAccess.x, secondAccess.y, secondAccess.z)
+	local firstPos = Vector3.new(
+		firstAccess.x + firstAccess.direction.X,
+		firstAccess.y + firstAccess.direction.Y,
+		firstAccess.z + firstAccess.direction.Z
+	)
+	local secondPos = Vector3.new(
+		secondAccess.x + secondAccess.direction.X,
+		secondAccess.y + secondAccess.direction.Y,
+		secondAccess.z + secondAccess.direction.Z
+	)
 
 	local minPos = Vector3.min(firstPos, secondPos)
 	local maxPos = Vector3.max(firstPos, secondPos)

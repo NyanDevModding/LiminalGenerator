@@ -60,7 +60,7 @@ return function(
 		roomStorage:addRoom(room)
 
 		for accessNum, access in roomData:iterateAccessDatas() do
-			local accessPos = room:getPos() + roomData:getAccessRelativeEntrancePos(accessNum)
+			local accessPos = room:getPos() + roomData:getAccessRelativePos(accessNum)
 			accessConnectStack:push(
 				Access.createAccess(room, access, accessPos.X, accessPos.Y, accessPos.Z)
 			)

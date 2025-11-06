@@ -27,13 +27,24 @@ return function()
 	beforeEach(function()
 		corridor = Corridor.new(firstAccess, secondAccess)
 		corridor:addVertex(2) -- 2, 2, 2
-		corridor:setVertex(2, Vector3.new(firstAccess.x, firstAccess.y, secondAccess.z))
+		corridor:setVertex(
+			2,
+			Vector3.new(
+				firstAccess.x + firstAccess.direction.X,
+				firstAccess.y + firstAccess.direction.Y,
+				secondAccess.z + secondAccess.direction.Z
+			)
+		)
 	end)
 
 	describe("Corridor", function()
 		it("should return the pos of the first access for the position of the corridor", function()
 			expect(corridor:getPos()).to.equal(
-				Vector3.new(firstAccess.x, firstAccess.y, firstAccess.z)
+				Vector3.new(
+					firstAccess.x + firstAccess.direction.X,
+					firstAccess.y + firstAccess.direction.Y,
+					firstAccess.z + firstAccess.direction.Z
+				)
 			)
 		end)
 		it("should handle adjacents rooms", function()
@@ -62,17 +73,32 @@ return function()
 		end)
 		it("should mododify a vertex pos", function()
 			corridor:addVertex(2)
-			corridor:setVertex(2, Vector3.new(firstAccess.x, firstAccess.y, secondAccess.z + 2))
+			corridor:setVertex(
+				2,
+				Vector3.new(
+					firstAccess.x + firstAccess.direction.X,
+					firstAccess.y + firstAccess.direction.Y,
+					secondAccess.z + firstAccess.direction.Z + 2
+				)
+			)
 
 			expect(corridor:getVertex(2)).to.equal(
-				Vector3.new(firstAccess.x, firstAccess.y, secondAccess.z + 2)
+				Vector3.new(
+					firstAccess.x + firstAccess.direction.X,
+					firstAccess.y + firstAccess.direction.Y,
+					secondAccess.z + firstAccess.direction.Z + 2
+				)
 			)
 		end)
 		it("should be able to invert a vertex", function()
 			corridor:invert(2)
 
 			expect(corridor:getVertex(2)).to.equal(
-				Vector3.new(secondAccess.x, firstAccess.y, firstAccess.z)
+				Vector3.new(
+					secondAccess.x + secondAccess.direction.X,
+					secondAccess.y + secondAccess.direction.Y,
+					firstAccess.z + firstAccess.direction.Z
+				)
 			)
 		end)
 		it("should iterate all the vertices", function()
@@ -139,8 +165,8 @@ return function()
 			expect(corridor:isIncludingCell(c3)).to.equal(true)
 		end)
 		it("should be able to divide itself into two corridor", function()
-			local newEndAccess = Access.createAccess(TEST_ROOM_3, TEST_ACCESS_2, 5, 2, 2)
-			local newStartAccess = Access.createAccess(TEST_ROOM_3, TEST_ACCESS_1, 7, 2, 2)
+			local newEndAccess = Access.createAccess(TEST_ROOM_3, TEST_ACCESS_2, 6, 2, 2)
+			local newStartAccess = Access.createAccess(TEST_ROOM_3, TEST_ACCESS_1, 6, 2, 2)
 
 			corridor:addVertex(3)
 			corridor:addVertex(4)
