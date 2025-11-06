@@ -225,24 +225,42 @@ function FlagGrid.getFirstSetInLine(self: FlagGrid, p1: Vector3, length: Vector3
 end
 
 function FlagGrid.__tostring(self: FlagGrid)
-	local str = "Displaying a flagGrid: row=y column=z\n"
+	local str = "Displaying a flagGrid: row=z column=x\n"
 
-	for x, xt in ipairs(self._storage) do
-		str ..= "layer:[x=" .. tostring(x) .. "]"
+	local maxXNumberSize = math.floor(math.log(self._xSize, 10)) + 1
 
-		for y, yBuffer in ipairs(xt) do
+	local maxZNumberSize = math.floor(math.log(self._zSize, 10)) + 1
+	local cellZIndent = string.rep(" ", maxZNumberSize)
+
+	local xIndex = string.rep(" ", maxZNumberSize + 1)
+	for x = 1, self._xSize, 1 do
+		local numberSize = math.floor(math.log(x, 10)) + 1
+		xIndex ..= tostring(x) .. string.rep(" ", maxXNumberSize - numberSize) .. " "
+	end
+
+	for y = 1, self._ySize, 1 do
+		str ..= "layer:[y=" .. tostring(y) .. "]"
+		for z = self._zSize - 1, 0, -1 do
+			-- z Indent as all the numbers do not have the same amount of digit
+			local zLength = maxZNumberSize - (math.floor(math.log(z + 1, 10)) + 1)
+			local zIndent = string.rep(" ", zLength)
+
 			str ..= "\n"
+			str ..= tostring(z + 1) .. zIndent .. " "
 
-			for z = 0, self:getZSize() - 1, 1 do
+			for x = 1, self._xSize, 1 do
+				local yBuffer = self._storage[x][y]
+
 				local bit = buffer.readbits(yBuffer, z, 1)
 
 				if bit == 0 then
-					str ..= " ○"
+					str ..= "○" .. cellZIndent
 				else
-					str ..= " ◙"
+					str ..= "◙" .. cellZIndent
 				end
 			end
 		end
+		str ..= "\n" .. xIndex
 		str ..= "\n\n"
 	end
 

@@ -49,8 +49,13 @@ function FlagGridsWrapper.getZSize(self: FlagGridsWrapper)
 end
 
 function FlagGridsWrapper.get(self: FlagGridsWrapper, x: number, y: number, z: number)
-	-- WTF IS THE MATTER WITH BUFFER LIB READING BITS FROM RIGHT TO LEFT AGFEYUZGFYEZ
-	return buffer.readbits(self._storage[x][y], z - 1, 1)
+	for _, grid in ipairs(self._grids) do
+		if grid:get(x, y, z) == 1 then
+			return 1
+		end
+	end
+
+	return 0
 end
 
 function FlagGridsWrapper.volumeAnd(
@@ -129,12 +134,56 @@ function FlagGridsWrapper.getFirstSetInLine(
 	return firstSetInLine
 end
 
+local CELL_APPEARANCES = { "█", "▓", "▒", "░", "☻" }
+
 function FlagGridsWrapper.__tostring(self: FlagGridsWrapper)
-	local str = ""
-	for i, grid in ipairs(self._grids) do
-		str ..= "grid#" .. tostring(i)
-		str ..= tostring(grid) .. "\n"
+	local str = "Displaying a flagGrid wrapper: row=z column=x\n"
+
+	local maxXNumberSize = math.floor(math.log(self:getXSize(), 10)) + 1
+
+	local maxZNumberSize = math.floor(math.log(self:getZSize(), 10)) + 1
+	local cellZIndent = string.rep(" ", maxZNumberSize)
+
+	local xIndex = string.rep(" ", maxZNumberSize + 1)
+	for x = 1, self:getXSize(), 1 do
+		local numberSize = math.floor(math.log(x, 10)) + 1
+		xIndex ..= tostring(x) .. string.rep(" ", maxXNumberSize - numberSize) .. " "
 	end
+
+	for y = 1, self:getYSize(), 1 do
+		str ..= "layer:[y=" .. tostring(y) .. "]"
+		for z = self:getZSize() - 1, 0, -1 do
+			-- z Indent as all the numbers do not have the same amount of digit
+			local zLength = maxZNumberSize - (math.floor(math.log(z + 1, 10)) + 1)
+			local zIndent = string.rep(" ", zLength)
+
+			str ..= "\n"
+			str ..= tostring(z + 1) .. zIndent .. " "
+
+			for x = 1, self:getXSize(), 1 do
+				-- Different bit appearance for each grid
+				local bitStr
+				for i, grid in ipairs(self._grids) do
+					if grid:get(x, y, z + 1) == 1 then
+						bitStr = tostring(CELL_APPEARANCES[i])
+
+						if bitStr == nil then
+							bitStr = "◙"
+						end
+					end
+				end
+
+				if bitStr == nil then
+					bitStr = "·"
+				end
+
+				str ..= bitStr .. cellZIndent
+			end
+		end
+		str ..= "\n" .. xIndex
+		str ..= "\n\n"
+	end
+
 	return str
 end
 
