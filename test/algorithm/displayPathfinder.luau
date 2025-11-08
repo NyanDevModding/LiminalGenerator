@@ -91,7 +91,6 @@ return function(
 				coroutine.resume(pathfinderCoroutine, roomGrid, access1, access2, nil, true)
 
 			if coroutine.status(pathfinderCoroutine) == "dead" then
-				print("skibidi")
 				if not ok then
 					print(v1)
 				end

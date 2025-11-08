@@ -42,12 +42,12 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 		local roomData = RoomData.new(roomJson.name, roomJson.size, accessDatas, chanceToSpawn)
 		table.insert(roomList, roomData)
 
-		print("Room: " .. roomJson.name)
-		print("Rotated 0 times")
-		print("Size: " .. tostring(roomJson.size))
-		print("Access data: ")
-		print(accessDatas)
-		print("\n")
+		-- print("Room: " .. roomJson.name)
+		-- print("Rotated 0 times")
+		-- print("Size: " .. tostring(roomJson.size))
+		-- print("Access data: ")
+		-- print(accessDatas)
+		-- print("\n")
 
 		if roomJson.rotate_y == false then
 			continue
@@ -106,12 +106,12 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 					AccessData.new(accessJson.type, accessJson.position, accessJson.direction)
 			end
 
-			print("Room: " .. roomJson.name)
-			print("Rotated " .. tostring(rotationNum) .. " times")
-			print("Size: " .. tostring(newRoomSize))
-			print("Access data: ")
-			print(newRoomAccessData)
-			print("\n")
+			-- print("Room: " .. roomJson.name)
+			-- print("Rotated " .. tostring(rotationNum) .. " times")
+			-- print("Size: " .. tostring(newRoomSize))
+			-- print("Access data: ")
+			-- print(newRoomAccessData)
+			-- print("\n")
 
 			local rotatedRoomData =
 				RoomData.new(roomJson.name, newRoomSize, newRoomAccessData, chanceToSpawn)
