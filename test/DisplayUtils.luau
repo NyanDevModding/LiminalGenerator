@@ -136,10 +136,14 @@ function DisplayUtils.createSelective2dGrid(
 	return folder
 end
 
-function DisplayUtils.createCorridorPart(firstPos: Vector3, secondPos: Vector3)
+function DisplayUtils.createCorridorPart(
+	firstPos: Vector3,
+	secondPos: Vector3,
+	segmentSize: number?
+)
 	local part = Instance.new("Part")
 	part.Anchored = true
-	part.Size = Vector3.new(1, 1, (secondPos - firstPos).Magnitude)
+	part.Size = Vector3.new(segmentSize or 1, segmentSize or 1, (secondPos - firstPos).Magnitude)
 	part.CFrame = CFrame.new((secondPos + firstPos) / 2, secondPos)
 	return part
 end
@@ -149,9 +153,15 @@ function DisplayUtils.plotCorridor(
 	cellSize: number,
 	folder: Folder,
 	corridor: Corridor.Corridor,
-	vertexSize: number?
+	vertexSize: number?,
+	segmentSize: number?,
+	transparency: number?,
+	color: Color3?
 )
 	vertexSize = vertexSize or 3
+	segmentSize = segmentSize or 1
+	transparency = transparency or 0
+	color = color or Color3.new(0, 0.368627, 0.847059)
 
 	for i, vertex in corridor:iterateVertices() do
 		local nextVertex = corridor:getVertex(i + 1)
@@ -160,7 +170,8 @@ function DisplayUtils.plotCorridor(
 		vertexPart.Name = "vx_" .. tostring(i)
 		vertexPart.Anchored = true
 		vertexPart.Size = Vector3.new(vertexSize, vertexSize, vertexSize)
-		vertexPart.Color = Color3.new(0, 0.368627, 0.847059)
+		vertexPart.Color = color
+		vertexPart.Transparency = transparency
 		vertexPart.Material = Enum.Material.Neon
 		vertexPart.Position = worldPos + (vertex * cellSize)
 		vertexPart.Position = Vector3.new(vertexPart.Position.X, worldPos.Y, -vertexPart.Position.Z)
@@ -175,11 +186,12 @@ function DisplayUtils.plotCorridor(
 		local secondWorldPos = worldPos + (nextVertex * cellSize)
 		secondWorldPos = Vector3.new(secondWorldPos.X, worldPos.Y, -secondWorldPos.Z)
 
-		local linkPart = DisplayUtils.createCorridorPart(firstWorldPos, secondWorldPos)
+		local linkPart = DisplayUtils.createCorridorPart(firstWorldPos, secondWorldPos, segmentSize)
 		linkPart.Position = Vector3.new(linkPart.Position.X, worldPos.Y + 1, linkPart.Position.Z)
 		linkPart.Name = "lk_" .. tostring(i)
 		linkPart.Material = Enum.Material.Neon
-		linkPart.Color = Color3.new(0, 0.368627, 0.847059)
+		linkPart.Color = color
+		linkPart.Transparency = transparency
 		linkPart.Parent = folder
 	end
 
