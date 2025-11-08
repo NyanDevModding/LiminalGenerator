@@ -12,7 +12,7 @@ function RoomData.new(
 	chanceToSpawn: number
 )
 	return setmetatable({
-		_RoomDataName = RoomDataName,
+		_roomDataName = RoomDataName,
 		_size = size,
 		_accessAmount = #accessesData,
 		_accessesData = accessesData,
@@ -21,7 +21,7 @@ function RoomData.new(
 end
 
 function RoomData.getName(self: RoomData)
-	return self._RoomDataName
+	return self._roomDataName
 end
 
 function RoomData.getSize(self: RoomData)
@@ -34,6 +34,16 @@ end
 
 function RoomData.getAccessData(self: RoomData, accessNum: number)
 	return self._accessesData[accessNum]
+end
+
+function RoomData.getAccessNum(self: RoomData, relativePos: Vector3): number?
+	for accessNum, accessData in ipairs(self._accessesData) do
+		if accessData:getRelativePosition() == relativePos then
+			return accessNum
+		end
+	end
+
+	return nil
 end
 
 function RoomData.getAccessRelativePos(self: RoomData, accessNum: number)

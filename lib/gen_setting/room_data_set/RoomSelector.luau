@@ -29,12 +29,25 @@ end
 
 function RoomSelector._refillSelection(self: RoomSelector, lastIndex: number)
 	local selection = self._selection
+	local selectionSize = 1
 
-	for i = 1, lastIndex, 1 do
+	for i = lastIndex, 1, -1 do
+		if selectionSize >= i then
+			break
+		end
+
 		if selection[i] == nil then
-			selection[i] = selection[lastIndex]
-			selection[lastIndex] = nil
-			lastIndex -= 1
+			continue
+		end
+
+		selection[selectionSize] = selection[i]
+		selection[i] = nil
+		selectionSize += 1
+
+		if selection[selectionSize] ~= nil then
+			while selection[selectionSize] ~= nil do
+				selectionSize += 1
+			end
 		end
 	end
 end
@@ -104,7 +117,14 @@ function RoomSelector.select(self: RoomSelector, f: (roomData: RoomData.RoomData
 	return self
 end
 
-function RoomSelector.getRandomRoom(self: RoomSelector, seededRandom: SeededRandom.SeededRandom)
+function RoomSelector.getRandomRoom(
+	self: RoomSelector,
+	seededRandom: SeededRandom.SeededRandom
+): RoomData.RoomData?
+	if self._selection[1] == nil then
+		return nil
+	end
+
 	-- First calculate the addition of all the chances to spawn
 	local totalLuck = 0
 	for _, roomData in self:iterateSelection() do
