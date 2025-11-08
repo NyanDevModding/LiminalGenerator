@@ -211,7 +211,6 @@ return function()
 			it("should add itself onto a flagGrid", function()
 				local grid = FlagGrid.new(10, 10, 10)
 				corridor:addOnGrid(grid)
-				print(grid)
 
 				expect(grid:volumeAnd(2, 2, 2, 2, 2, 8)).to.equal(true)
 				expect(grid:volumeAnd(2, 2, 2, 10, 2, 2)).to.equal(true)
