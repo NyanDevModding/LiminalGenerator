@@ -106,14 +106,14 @@ function Corridor.setAdjacent(
 	self: Corridor,
 	adjacent: IRoomStorable.IRoomStorable,
 	accessNumero: number,
-	otherAccessNumero: number
+	accessData: IAccessData.IAccessData
 )
 	self._adjacents[accessNumero] = adjacent
 
 	if accessNumero == 1 then
 		self._firstAccess = Access.createAccess(
 			adjacent,
-			adjacent:getAccessData(otherAccessNumero),
+			accessData,
 			self._firstAccess.x,
 			self._firstAccess.y,
 			self._firstAccess.z
@@ -123,7 +123,7 @@ function Corridor.setAdjacent(
 
 	self._secondAccess = Access.createAccess(
 		adjacent,
-		adjacent:getAccessData(otherAccessNumero),
+		accessData,
 		self._secondAccess.x,
 		self._secondAccess.y,
 		self._secondAccess.z

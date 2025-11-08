@@ -3,11 +3,12 @@ local IAccessData = require(script.Parent.Parent.Parent.gen_setting.access.IAcce
 export type IRoomStorable = {
 	getPos: (self: IRoomStorable) -> Vector3,
 	getAccessData: (self: IRoomStorable, accessNumero: number) -> IAccessData.IAccessData,
+	getAccessNum: (self: IRoomStorable, relativePos: Vector3) -> number,
 	setAdjacent: (
 		self: IRoomStorable,
 		adjacent: IRoomStorable,
 		accessNumero: number,
-		otherAccessNumero: number
+		accessData: IAccessData.IAccessData
 	) -> Vector3,
 	iterateAdjacents: (self: IRoomStorable) -> Vector3,
 	isIncludingCell: (self: IRoomStorable, cellPos: Vector3) -> boolean,
