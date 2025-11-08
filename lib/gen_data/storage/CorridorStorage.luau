@@ -34,4 +34,8 @@ function CorridorStorage.removeCorridor(self: CorridorStorage, corridor: Corrido
 	end
 end
 
+function CorridorStorage.iterateCorridor(self: CorridorStorage)
+	return ipairs(self._storage)
+end
+
 return CorridorStorage
