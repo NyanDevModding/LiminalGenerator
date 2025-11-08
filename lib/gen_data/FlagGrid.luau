@@ -83,12 +83,19 @@ function FlagGrid.volumeSet(
 	end
 
 	local deltaZ = z2 - z1
-	local value = 2 ^ (deltaZ + 1) - 1
-	for x = x1, x2, 1 do
-		for y = y1, y2, 1 do
-			buffer.writebits(self._storage[x][y], z1, deltaZ + 1, value)
+	local offset = 0
+	repeat
+		local actualDelta = if deltaZ <= 31 then deltaZ else 31
+		deltaZ -= actualDelta
+
+		local value = 2 ^ (actualDelta + 1) - 1
+		for x = x1, x2, 1 do
+			for y = y1, y2, 1 do
+				buffer.writebits(self._storage[x][y], offset + z1, actualDelta + 1, value)
+			end
 		end
-	end
+		offset += actualDelta
+	until deltaZ == 0
 end
 
 function FlagGrid.volumeReset(
@@ -113,11 +120,18 @@ function FlagGrid.volumeReset(
 	end
 
 	local deltaZ = z2 - z1
-	for x = x1, x2, 1 do
-		for y = y1, y2, 1 do
-			buffer.writebits(self._storage[x][y], z1, 1 + deltaZ, 0)
+	local offset = 0
+	repeat
+		local actualDelta = if deltaZ <= 31 then deltaZ else 31
+		deltaZ -= actualDelta
+
+		for x = x1, x2, 1 do
+			for y = y1, y2, 1 do
+				buffer.writebits(self._storage[x][y], z1 + offset, actualDelta + 1, 0)
+			end
 		end
-	end
+		offset += actualDelta
+	until deltaZ == 0
 end
 
 function FlagGrid.volumeAnd(
@@ -142,14 +156,21 @@ function FlagGrid.volumeAnd(
 	end
 
 	local deltaZ = z2 - z1
-	local value = 2 ^ (deltaZ + 1) - 1
-	for x = x1, x2, 1 do
-		for y = y1, y2, 1 do
-			if buffer.readbits(self._storage[x][y], z1, 1 + deltaZ) ~= value then
-				return false
+	local offset = 0
+	repeat
+		local actualDelta = if deltaZ <= 31 then deltaZ else 31
+		deltaZ -= actualDelta
+
+		local value = 2 ^ (actualDelta + 1) - 1
+		for x = x1, x2, 1 do
+			for y = y1, y2, 1 do
+				if buffer.readbits(self._storage[x][y], z1 + offset, 1 + actualDelta) ~= value then
+					return false
+				end
 			end
 		end
-	end
+		offset += actualDelta
+	until deltaZ == 0
 
 	return true
 end
@@ -176,13 +197,20 @@ function FlagGrid.volumeOr(
 	end
 
 	local deltaZ = z2 - z1
-	for x = x1, x2, 1 do
-		for y = y1, y2, 1 do
-			if buffer.readbits(self._storage[x][y], z1, deltaZ + 1) ~= 0 then
-				return true
+	local offset = 0
+	repeat
+		local actualDelta = if deltaZ <= 31 then deltaZ else 31
+		deltaZ -= actualDelta
+
+		for x = x1, x2, 1 do
+			for y = y1, y2, 1 do
+				if buffer.readbits(self._storage[x][y], z1 + offset, 1 + actualDelta) ~= 0 then
+					return true
+				end
 			end
 		end
-	end
+		offset += actualDelta
+	until deltaZ == 0
 
 	return false
 end
