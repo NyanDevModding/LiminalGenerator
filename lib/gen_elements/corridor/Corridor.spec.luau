@@ -18,6 +18,7 @@ local TEST_ROOM_3 = RoomData.new("test_2", Vector3.new(0, 0, 0), { TEST_ACCESS_1
 
 local TEST_WRAPPED_1 = Room.new(Vector3.new(1, 2, 8), TEST_ROOM_1)
 local TEST_WRAPPED_2 = Room.new(Vector3.new(11, 2, 2), TEST_ROOM_2)
+local TEST_WRAPPED_3 = Room.new(Vector3.new(6, 2, 2), TEST_ROOM_3)
 
 return function()
 	local firstAccess: Access.Access = TEST_ACCESS_1:wrap(TEST_WRAPPED_1) -- 2, 2, 8
@@ -165,15 +166,10 @@ return function()
 			expect(corridor:isIncludingCell(c3)).to.equal(true)
 		end)
 		it("should be able to divide itself into two corridor", function()
-			local newEndAccess = Access.createAccess(TEST_ROOM_3, TEST_ACCESS_2, 6, 2, 2)
-			local newStartAccess = Access.createAccess(TEST_ROOM_3, TEST_ACCESS_1, 6, 2, 2)
+			local newEndAccess = Access.createAccess(TEST_WRAPPED_3, TEST_ACCESS_2, 6, 2, 2)
+			local newStartAccess = Access.createAccess(TEST_WRAPPED_3, TEST_ACCESS_1, 6, 2, 2)
 
-			corridor:addVertex(3)
-			corridor:addVertex(4)
-			corridor:setVertex(3, Vector3.new(5, 2, 2))
-			corridor:setVertex(4, Vector3.new(7, 2, 2))
-
-			local secondCorridor = corridor:divide(3, newEndAccess, newStartAccess)
+			local secondCorridor = corridor:divide(newEndAccess, newStartAccess)
 			expect(corridor:getVertex(1)).to.equal(Vector3.new(2, 2, 8))
 			expect(corridor:getVertex(2)).to.equal(Vector3.new(2, 2, 2))
 			expect(corridor:getVertex(3)).to.equal(Vector3.new(5, 2, 2))

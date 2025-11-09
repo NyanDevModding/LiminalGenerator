@@ -264,6 +264,8 @@ function Corridor.invert(self: Corridor, vertexNum: number)
 	self:setVertex(vertexNum, vertex)
 end
 
+-- Move all the vertices from vertexNum to the last one and add a vertex at
+-- vertexNum with the value of the old vertex at this vertexNum
 function Corridor.addVertex(self: Corridor, vertexNum: number)
 	for i = #self._vertices, vertexNum, -1 do
 		self._vertices[i + 1] = self._vertices[i]
@@ -392,18 +394,29 @@ function Corridor.getFirstCollisionWith(self: Corridor, otherCorridor: Corridor)
 end
 
 --TODO code and add to spec
-function Corridor.getFirstVertexBefore(self: Corridor, pos: Vector3) end
+function Corridor.getFirstVertexBefore(self: Corridor, pos: Vector3): number?
+	for i = 1, self:getVertexAmount() - 1, 1 do
+		local previous = self:getVertex(i)
+		local vertex = self:getVertex(i + 1)
 
--- The vertexNum is the numero of the vertex that is transformed into the end
--- vertex. Thus the vertexNum + 1 vertex is the start of the new corridor.
--- Please start by creating to vertices at newEnd and newStart accesses
--- positions.
-function Corridor.divide(
-	self: Corridor,
-	vertexNum: Vector3,
-	newEndAccess: Access.Access,
-	newStartAccess: Access.Access
-)
+		local min, max = Vector3.min(previous, vertex), Vector3.max(previous, vertex)
+
+		if
+			(min.X <= pos.X and pos.X <= max.X)
+			and (min.Y <= pos.Y and pos.Y <= max.Y)
+			and (min.Z <= pos.Z and pos.Z <= max.Z)
+		then
+			return i
+		end
+	end
+
+	return nil
+end
+
+-- The vertexNum is the numero of the vertex that is transformed or created
+-- into the end vertex. Thus the vertexNum + 1 vertex is the start of the new
+-- corridor.
+function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAccess: Access.Access)
 	local newStartAccessPos = Vector3.new(
 		newStartAccess.x + newStartAccess.direction.X,
 		newStartAccess.y + newStartAccess.direction.Y,
@@ -415,42 +428,29 @@ function Corridor.divide(
 		newEndAccess.z + newEndAccess.direction.Z
 	)
 
-	-- Corridor mitosis PLUH
-	local vertex = self._vertices[vertexNum]
-	local nextVertex = self._vertices[vertexNum + 1]
-	-- Check if the both the accesses are included between the vertex and the next one.
-	if
-		(
-			newEndAccessPos.x + newEndAccess.direction.X > nextVertex.X
-			and newStartAccessPos.x + newStartAccess.direction.X < vertex.X
-		)
-		and (newEndAccessPos.y + newEndAccess.direction.Y > nextVertex.Y and newStartAccessPos.y + newStartAccess.direction.Y < vertex.Y)
-		and (
-			newEndAccessPos.z + newEndAccess.direction.Z > nextVertex.Z
-			and newStartAccessPos.z + newStartAccess.direction.Z < vertex.Z
-		)
-	then
+	-- Check if both the accesses are included between the vertex and the next one.
+	if self._adjacents[2] == nil then
 		error(
-			(
-				"Error while dividing a corridor: expected the new accesses to be aligned "
-				.. "with the vertices, got the accesse entrances: newEnd:{%i, %i, %i} and newStart:"
-				.. "{%i, %i, %i} and the vertices: vertex:{%i, %i, %i} and nextVertex:{%i, %i, %i}"
-			):format(
-				newStartAccess.x + newStartAccess.direction.X,
-				newStartAccess.y + newStartAccess.direction.Y,
-				newStartAccess.z + newStartAccess.direction.Z,
-				newStartAccessPos.x + newStartAccess.direction.X,
-				newStartAccessPos.y + newStartAccess.direction.Y,
-				newStartAccessPos.z + newStartAccess.direction.Z,
-				vertex.X,
-				vertex.Y,
-				vertex.Z,
-				nextVertex.X,
-				nextVertex.Y,
-				nextVertex.Z
-			)
+			"Error while dividing a corridor: expected the divided "
+				.. "corridor to have an adjacent room, got nil"
 		)
 	end
+
+	-- If the vertex doesn't exist at the newEnd then create one.
+	local vertexNum = self:getFirstVertexBefore(newEndAccessPos)
+	if self:getVertex(vertexNum) ~= newEndAccessPos then
+		self:addVertex(vertexNum + 1)
+		self:setVertex(vertexNum + 1, newEndAccessPos)
+		vertexNum += 1
+	end
+
+	-- If the next vertex doesn't exist at the newStart then create one.
+	if self._vertices[vertexNum + 1] ~= newStartAccessPos then
+		self:addVertex(vertexNum + 1)
+		self:setVertex(vertexNum + 1, newStartAccessPos)
+	end
+
+	-- Corridor mitosis PLUH
 
 	-- Create the new corridor that occupy the second part of this one
 	local secondAccessPos = self:getVertex(self:getVertexAmount())
@@ -465,9 +465,9 @@ function Corridor.divide(
 		)
 	)
 
-	-- Change this secondAccess to be the new EndAccess
-	self._secondAccess = newEndAccess
-	self._vertices[vertexNum] = newEndAccessPos
+	-- Change this corridor to the new access
+	self._secondAccess = newEndAccess.access
+	self._adjacents[2] = newEndAccess.room
 	self._vertices[vertexNum + 1] = nil
 
 	-- Update the new corridor
@@ -478,7 +478,7 @@ function Corridor.divide(
 	self._vertices[vertexNum + 2] = nil
 	for i = 3, (vertexAmount - 1) - vertexNum, 1 do
 		--TODO a better optimized way to do this
-		newCorridor:addVertex(i)
+		newCorridor:addVertex(i - 1)
 		newCorridor:setVertex(i, self._vertices[vertexNum + i])
 
 		-- + delete the duplicated part of this corridor
