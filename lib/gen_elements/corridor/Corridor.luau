@@ -63,7 +63,7 @@ function Corridor.newFromRooms(
 		_firstAccess = accessData1,
 		_secondAccess = accessData2,
 		_vertices = { p1, p2 },
-	}, Corridor)
+	}, Corridor) :: Corridor
 end
 
 function Corridor.getPos(self: Corridor)
@@ -393,13 +393,18 @@ function Corridor.getFirstCollisionWith(self: Corridor, otherCorridor: Corridor)
 	return nil
 end
 
---TODO code and add to spec
+--TODO add to spec
 function Corridor.getFirstVertexBefore(self: Corridor, pos: Vector3): number?
 	for i = 1, self:getVertexAmount() - 1, 1 do
-		local previous = self:getVertex(i)
-		local vertex = self:getVertex(i + 1)
+		local vertex = self:getVertex(i)
+		local nextVertex = self:getVertex(i + 1)
 
-		local min, max = Vector3.min(previous, vertex), Vector3.max(previous, vertex)
+		-- Don't include the nextVertex if the pos is actually the nextVertex
+		if nextVertex == pos then
+			return i + 1
+		end
+
+		local min, max = Vector3.min(vertex, nextVertex), Vector3.max(vertex, nextVertex)
 
 		if
 			(min.X <= pos.X and pos.X <= max.X)
@@ -408,6 +413,11 @@ function Corridor.getFirstVertexBefore(self: Corridor, pos: Vector3): number?
 		then
 			return i
 		end
+	end
+
+	-- Check the last vertex, only cell not checked in the corridor
+	if self:getVertex(self:getVertexAmount()) == pos then
+		return self:getVertexAmount()
 	end
 
 	return nil
@@ -444,45 +454,43 @@ function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAc
 		vertexNum += 1
 	end
 
-	-- If the next vertex doesn't exist at the newStart then create one.
-	if self._vertices[vertexNum + 1] ~= newStartAccessPos then
-		self:addVertex(vertexNum + 1)
-		self:setVertex(vertexNum + 1, newStartAccessPos)
-	end
-
 	-- Corridor mitosis PLUH
 
 	-- Create the new corridor that occupy the second part of this one
-	local secondAccessPos = self:getVertex(self:getVertexAmount())
+	local secondEntrancePos = self:getVertex(self:getVertexAmount())
 	local newCorridor = Corridor.new(
 		newStartAccess,
 		Access.createAccess(
 			self._adjacents[2],
 			self._secondAccess,
-			secondAccessPos.X,
-			secondAccessPos.Y,
-			secondAccessPos.Z
+			secondEntrancePos.X - self._secondAccess:getDirection().X,
+			secondEntrancePos.Y - self._secondAccess:getDirection().Y,
+			secondEntrancePos.Z - self._secondAccess:getDirection().Z
 		)
 	)
 
 	-- Change this corridor to the new access
 	self._secondAccess = newEndAccess.access
 	self._adjacents[2] = newEndAccess.room
-	self._vertices[vertexNum + 1] = nil
 
-	-- Update the new corridor
 	local vertexAmount = #self._vertices
-	-- i = 3 cause the 1st is the newStartAccess and cause we set manually the 2nd vertex
-	-- (vertexAmount - 1) cause we exclude the endVertex
-	newCorridor:setVertex(2, self._vertices[vertexNum + 2])
-	self._vertices[vertexNum + 2] = nil
-	for i = 3, (vertexAmount - 1) - vertexNum, 1 do
+
+	-- Delete the vertices between the access entrances
+	local firstVertexBeforeNewStart = self:getFirstVertexBefore(newStartAccessPos)
+	for i = vertexNum + 1, firstVertexBeforeNewStart, 1 do
+		self._vertices[i] = nil
+	end
+
+	-- i = firstVertexBeforeNewStart + 1 because the +0 is the newStartAccess
+	-- (vertexAmount - 1) because we exclude the endVertex
+	for i = firstVertexBeforeNewStart + 1, (vertexAmount - 1), 1 do
 		--TODO a better optimized way to do this
-		newCorridor:addVertex(i - 1)
-		newCorridor:setVertex(i, self._vertices[vertexNum + i])
+		local newVertexNum = i - firstVertexBeforeNewStart + 1
+		newCorridor:addVertex(newVertexNum)
+		newCorridor:setVertex(newVertexNum, self._vertices[i])
 
 		-- + delete the duplicated part of this corridor
-		self._vertices[vertexNum + i] = nil
+		self._vertices[i] = nil
 	end
 	self._vertices[vertexAmount] = nil
 
