@@ -14,12 +14,7 @@ function DeadEndTileRoomData.new(
 	model: Model
 )
 	return setmetatable({
-		_name = ("dead_end_type#%i_direction#%i;%i;%i"):format(
-			accessType,
-			direction.X,
-			direction.Y,
-			direction.Z
-		),
+		_name = ("dead_end_type#%i_direction#{%s}"):format(accessType, tostring(direction)),
 		_direction = direction,
 		_accessType = accessType,
 		_thickness = thickness,
@@ -57,7 +52,7 @@ function DeadEndTileRoomData.getDirection(self: DeadEndTileRoomData)
 end
 
 function DeadEndTileRoomData.getChanceToSpawn()
-	return 0
+	return 1
 end
 
 function DeadEndTileRoomData.getAccessData(self: DeadEndTileRoomData)

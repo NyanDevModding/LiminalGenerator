@@ -18,7 +18,7 @@ function MixedComplexTileData.new(
 		_model = model,
 	}, MixedComplexTileData)
 end
-
+--TODO make this class an hybrid room-tile
 function MixedComplexTileData.getDirection(self: MixedComplexTileData)
 	return self._direction
 end

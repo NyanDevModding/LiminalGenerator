@@ -9,7 +9,7 @@ local SimpleTileDirections = require(script.Parent.Parent.SimpleTileDirections)
 local ComplexTileDirections = require(script.Parent.Parent.ComplexTileDirections)
 
 local SimpleTileData = require(script.Parent.Parent.corridor_tile.uniform.SimpleTileData)
-local ComplexTileData = require(script.Parent.Parent.corridor_tile.uniform.ComplexTileData)
+local ComplexTileRoomData = require(script.Parent.Parent.corridor_tile.uniform.ComplexTileRoomData)
 local DeadEndTileRoomData = require(script.Parent.Parent.corridor_tile.uniform.DeadEndTileRoomData)
 
 local MixedSimpleTileData = require(script.Parent.Parent.corridor_tile.mixed.MixedSimpleTileData)
@@ -39,7 +39,12 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 			chanceToSpawn /= 4
 		end
 
-		local roomData = RoomData.new(roomJson.name, roomJson.size, accessDatas, chanceToSpawn)
+		local roomData = RoomData.new(
+			roomJson.name .. if roomJson.rotate_y then "_r0°" else "",
+			roomJson.size,
+			accessDatas,
+			chanceToSpawn
+		)
 		table.insert(roomList, roomData)
 
 		-- print("Room: " .. roomJson.name)
@@ -113,20 +118,26 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 			-- print(newRoomAccessData)
 			-- print("\n")
 
-			local rotatedRoomData =
-				RoomData.new(roomJson.name, newRoomSize, newRoomAccessData, chanceToSpawn)
+			local rotatedRoomData = RoomData.new(
+				roomJson.name .. "_r" .. tostring(90 * rotationNum) .. "°",
+				newRoomSize,
+				newRoomAccessData,
+				chanceToSpawn
+			)
 			table.insert(roomList, rotatedRoomData)
 		end
 	end
 
-	table.freeze(roomList)
 	return roomList
 end
 
-local function readCorridorDataSet(setData: room_data_set_json_type.corridorTileSet)
+local function readCorridorDataSet(
+	setData: room_data_set_json_type.corridorTileSet,
+	roomList: { RoomData.RoomData }
+)
 	local uniformTileDict = {
 		simple = {} :: { SimpleTileData.SimpleTileData },
-		complex = {} :: { ComplexTileData.ComplexTileData },
+		complex = {} :: { ComplexTileRoomData.ComplexTileRoomData },
 		deadEnd = {} :: { DeadEndTileRoomData.DeadEndTileRoomData },
 	}
 
@@ -146,29 +157,29 @@ local function readCorridorDataSet(setData: room_data_set_json_type.corridorTile
 
 		-- Handle Complex uniform tiles data
 		for direction, complexTileData in pairs(uniformTileSet.complex_tiles) do
-			table.insert(
-				uniformTileDict.complex,
-				ComplexTileData.new(
-					direction,
-					typeNum or 1,
-					complexTileData.thickness or 1,
-					complexTileData.model or DEFAULT_MODEL
-				)
+			local tile = ComplexTileRoomData.new(
+				direction,
+				typeNum or 1,
+				complexTileData.thickness or 1,
+				complexTileData.model or DEFAULT_MODEL
 			)
+
+			table.insert(uniformTileDict.complex, tile)
+			table.insert(roomList, tile)
 		end
 
 		-- Handle Dead end tiles data
 		-- dead ends are always uniform
 		for direction, deadEndTileData in pairs(uniformTileSet.dead_ends) do
-			table.insert(
-				uniformTileDict.deadEnd,
-				DeadEndTileRoomData.new(
-					direction,
-					typeNum or 1,
-					deadEndTileData.thickness or 1,
-					deadEndTileData.model or DEFAULT_MODEL
-				)
+			local tile = DeadEndTileRoomData.new(
+				direction,
+				typeNum or 1,
+				deadEndTileData.thickness or 1,
+				deadEndTileData.model or DEFAULT_MODEL
 			)
+
+			table.insert(uniformTileDict.deadEnd, tile)
+			table.insert(roomList, tile)
 		end
 	end
 
@@ -213,12 +224,17 @@ local function readCorridorDataSet(setData: room_data_set_json_type.corridorTile
 end
 
 function RoomDataSet.new(setData: room_data_set_json_type.roomDataSetJson)
+	local roomList = readRoomSetJson(setData.rooms)
+	local corridorData = readCorridorDataSet(setData.corridor_tiles, roomList)
+	table.freeze(roomList)
+	table.freeze(corridorData)
+
 	return setmetatable({
 		_version = (setData.data_set_name or "unknown") .. "@" .. tostring(
 			setData.data_set_version or "unknown"
 		),
-		_roomList = readRoomSetJson(setData.rooms),
-		_corridorData = readCorridorDataSet(setData.corridor_tiles),
+		_roomList = roomList,
+		_corridorData = corridorData,
 	}, RoomDataSet)
 end
 
