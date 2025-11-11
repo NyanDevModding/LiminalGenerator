@@ -1,6 +1,7 @@
 local ComplexTileDirections = require(script.Parent.Parent.Parent.ComplexTileDirections)
 local AccessData = require(script.Parent.Parent.Parent.access.AccessData)
 
+-- Implements RoomData's interface
 local ComplexTileRoomData = {}
 ComplexTileRoomData.__index = ComplexTileRoomData
 
@@ -53,8 +54,36 @@ function ComplexTileRoomData.getAccessType(self: ComplexTileRoomData)
 	return self._accessType
 end
 
-function ComplexTileRoomData.getEntranceRelativePos(self: ComplexTileRoomData, accessNum: number)
+function ComplexTileRoomData.getAccessData(self: ComplexTileRoomData, accessNum: number)
+	return self._accessDatas[accessNum]
+end
+
+function ComplexTileRoomData.getAccessRelativePos(self: ComplexTileRoomData, accessNum: number)
+	return Vector3.zero
+end
+
+function ComplexTileRoomData.getAccessRelativeEntrancePos(
+	self: ComplexTileRoomData,
+	accessNum: number
+)
 	return self._direction[accessNum]
+end
+
+function ComplexTileRoomData.getAccessNum(
+	self: ComplexTileRoomData,
+	relativeEntrancePos: Vector3
+): number?
+	for accessNum, accessEntrancePos in ipairs(self._direction) do
+		if accessEntrancePos == relativeEntrancePos then
+			return accessNum
+		end
+	end
+
+	return nil
+end
+
+function ComplexTileRoomData.getAccessNumber(self: ComplexTileRoomData)
+	return if self._direction == ComplexTileDirections.NORTH_WEST_SOUTH_EAST then 4 else 3
 end
 
 function ComplexTileRoomData.getThickness(self: ComplexTileRoomData)
@@ -63,21 +92,6 @@ end
 
 function ComplexTileRoomData.getModel(self: ComplexTileRoomData)
 	return self._model
-end
-
-function ComplexTileRoomData.getAccessData(self: ComplexTileRoomData, accessNum: number)
-	return self._accessDatas[accessNum]
-end
-
-function ComplexTileRoomData.getAccessRelativeEntrancePos(
-	self: ComplexTileRoomData,
-	accessNum: number
-)
-	return self._accessDatas[accessNum]:getDirection()
-end
-
-function ComplexTileRoomData.getAccessNumber(self: ComplexTileRoomData)
-	return if self._direction == ComplexTileDirections.NORTH_WEST_SOUTH_EAST then 4 else 3
 end
 
 function ComplexTileRoomData.iterateAccessDatas(self: ComplexTileRoomData)

@@ -55,6 +55,17 @@ function DeadEndTileRoomData.getChanceToSpawn()
 	return 1
 end
 
+function DeadEndTileRoomData.getAccessNum(
+	self: DeadEndTileRoomData,
+	relativeEntrancePos: Vector3
+): number?
+	if relativeEntrancePos == self._direction then
+		return 1
+	end
+
+	return nil
+end
+
 function DeadEndTileRoomData.getAccessData(self: DeadEndTileRoomData)
 	return self._accessData
 end
