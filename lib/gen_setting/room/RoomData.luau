@@ -36,9 +36,11 @@ function RoomData.getAccessData(self: RoomData, accessNum: number)
 	return self._accessesData[accessNum]
 end
 
-function RoomData.getAccessNum(self: RoomData, relativePos: Vector3): number?
+function RoomData.getAccessNum(self: RoomData, relativeEntrancePos: Vector3): number?
 	for accessNum, accessData in ipairs(self._accessesData) do
-		if accessData:getRelativePosition() == relativePos then
+		-- Use the relativeEntrancePos as accesses can be at the same
+		-- relativePos but never at the same entrancePos
+		if accessData:getRelativeEntrancePos() == relativeEntrancePos then
 			return accessNum
 		end
 	end
