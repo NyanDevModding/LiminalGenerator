@@ -95,7 +95,7 @@ Iris:Connect(function()
 			{ number = worldSize }
 		)
 
-		local cellSize = Iris.State(10)
+		local cellSize = Iris.State(2)
 		Iris.InputNum({ "Size of a grid cell" }, { number = cellSize })
 
 		local seed = Iris.State(543434512)
@@ -123,7 +123,7 @@ Iris:Connect(function()
 					cellSize.value,
 					worldSize.value,
 					seed.value,
-					DEFAULT_GEN_SETTINGS,
+					{ [Settings.DEAD_END_LUCK] = 512, [Settings.ROOM_AMOUNT] = roomAmount.value },
 					TEST_ROOM_DATA_SET_JSONS[roomDataSetName.value],
 					delta.value
 				)
