@@ -1,5 +1,7 @@
 local Directions = require(script.Parent.Parent.LiminalGenerator.gen_data.Directions)
 local FlagGrid = require(script.Parent.Parent.LiminalGenerator.gen_data.FlagGrid)
+local CorridorStorage =
+	require(script.Parent.Parent.LiminalGenerator.gen_data.storage.CorridorStorage)
 
 local Corridor = require(script.Parent.Parent.LiminalGenerator.gen_elements.corridor.Corridor)
 local AccessData = require(script.Parent.Parent.LiminalGenerator.gen_setting.access.AccessData)
@@ -198,7 +200,40 @@ function DisplayUtils.plotCorridor(
 	return folder
 end
 
+function DisplayUtils.plotCorridorStorage(
+	worldPos: Vector3,
+	cellSize: number,
+	corridorStorage: CorridorStorage.CorridorStorage,
+	corridorColor: Color3?,
+	corridorColorDict: { [Corridor.Corridor]: Color3 }?,
+	vertexSize: number?,
+	segmentSize: number?,
+	transparency: number?
+)
+	local corridorGridFolder = Instance.new("Folder")
+	corridorColorDict = corridorColorDict or {}
+
+	for _, corridor in corridorStorage:iterateCorridor() do
+		local color = corridorColor or corridorColorDict[corridor] or Color3.fromRGB(0, 100, 0)
+
+		DisplayUtils.plotCorridor(
+			worldPos + Vector3.yAxis,
+			cellSize,
+			corridorGridFolder,
+			corridor,
+			vertexSize,
+			segmentSize,
+			transparency,
+			color
+		)
+	end
+
+	return corridorGridFolder
+end
+
 DisplayUtils.TEST_ACCESS_1 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.EAST)
 DisplayUtils.TEST_ACCESS_2 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.WEST)
+DisplayUtils.TEST_ACCESS_3 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.NORTH)
+DisplayUtils.TEST_ACCESS_4 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.SOUTH)
 
 return DisplayUtils
