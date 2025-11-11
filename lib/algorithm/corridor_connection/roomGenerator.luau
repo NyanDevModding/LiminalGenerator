@@ -28,7 +28,7 @@ return function(
 
 	local gridSize = Vector3.new(roomGrid:getXSize(), roomGrid:getYSize(), roomGrid:getZSize())
 
-	local selector = roomDataSet:startRoomSelection()
+	local selector = roomDataSet:startRoomSelection():selectNonTile()
 
 	while roomAmount > 0 and i < TIMEOUT_AMOUNT do
 		local roomData = selector:getRandomRoom(seededRandom)
