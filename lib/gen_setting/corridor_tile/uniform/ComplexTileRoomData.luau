@@ -38,6 +38,10 @@ function ComplexTileRoomData.getName(self: ComplexTileRoomData)
 	return self._name
 end
 
+function ComplexTileRoomData.isCorridorTile(self: ComplexTileRoomData)
+	return true
+end
+
 function ComplexTileRoomData.getSize(self: ComplexTileRoomData)
 	return Vector3.zero
 end

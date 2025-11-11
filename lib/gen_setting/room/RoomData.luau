@@ -24,6 +24,10 @@ function RoomData.getName(self: RoomData)
 	return self._roomDataName
 end
 
+function RoomData.isCorridorTile(self: RoomData)
+	return false
+end
+
 function RoomData.getSize(self: RoomData)
 	return self._size
 end

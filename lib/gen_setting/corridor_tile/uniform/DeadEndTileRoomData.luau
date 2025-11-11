@@ -31,6 +31,10 @@ function DeadEndTileRoomData.getSize(self: DeadEndTileRoomData)
 	return Vector3.zero
 end
 
+function DeadEndTileRoomData.isCorridorTile(self: DeadEndTileRoomData)
+	return true
+end
+
 function DeadEndTileRoomData.getEntranceRelativePos(self: DeadEndTileRoomData)
 	return self._direction
 end

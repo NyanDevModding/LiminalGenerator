@@ -102,6 +102,36 @@ function RoomSelector.selectMaxSize(
 	return self
 end
 
+-- Select the tile rooms
+function RoomSelector.selectTile(self: RoomSelector)
+	local lastIndex = #self._selection
+
+	for i, roomData in self:iterateSelection() do
+		if roomData:isCorridorTile() then
+			self._selection[i] = nil
+		end
+	end
+
+	self:_refillSelection(lastIndex)
+
+	return self
+end
+
+-- Select the tile rooms
+function RoomSelector.selectNonTile(self: RoomSelector)
+	local lastIndex = #self._selection
+
+	for i, roomData in self:iterateSelection() do
+		if not roomData:isCorridorTile() then
+			self._selection[i] = nil
+		end
+	end
+
+	self:_refillSelection(lastIndex)
+
+	return self
+end
+
 -- Select the rooms if the function given returns true.
 function RoomSelector.select(self: RoomSelector, f: (roomData: RoomData.RoomData) -> boolean)
 	local lastIndex = #self._selection
