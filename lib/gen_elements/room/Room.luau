@@ -45,7 +45,7 @@ function Room.isIncludingCell(self: Room, cellPos: Vector3)
 end
 
 function Room.setAdjacent(self: Room, adjacent: Room, accessNumero: number)
-	self._adjacent[accessNumero] = adjacent
+	self._adjacents[accessNumero] = adjacent
 end
 
 function Room.check(self: Room, errorLog: string)
