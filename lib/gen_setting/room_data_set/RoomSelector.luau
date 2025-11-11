@@ -107,7 +107,7 @@ function RoomSelector.selectTile(self: RoomSelector)
 	local lastIndex = #self._selection
 
 	for i, roomData in self:iterateSelection() do
-		if roomData:isCorridorTile() then
+		if not roomData:isCorridorTile() then
 			self._selection[i] = nil
 		end
 	end
@@ -122,7 +122,7 @@ function RoomSelector.selectNonTile(self: RoomSelector)
 	local lastIndex = #self._selection
 
 	for i, roomData in self:iterateSelection() do
-		if not roomData:isCorridorTile() then
+		if roomData:isCorridorTile() then
 			self._selection[i] = nil
 		end
 	end
@@ -162,7 +162,7 @@ function RoomSelector.getRandomRoom(
 	end
 
 	-- Calculate a number between 0 and the total chance to spawn of all the rooms
-	local result = math.round((seededRandom:random() / 1023) * totalLuck)
+	local result = (seededRandom:random() / 1023) * totalLuck
 
 	-- calculate on which room it fell
 	local actualLuck = 0
