@@ -16,12 +16,11 @@ return function(
 	roomGrid: FlagGrid.FlagGrid,
 	roomStorage: RoomStorage.RoomStorage,
 	accessConnectStack: AccessConnectStack.AccessConnectStack,
-	roomAmount: number?,
 	debugMode: boolean?
 )
 	--TODO This is one of the worst shit algorithm, approximately a lot of byte of trash data and useless call, you really need to optimize this
 	--TODO make it place the consecutive room next to each other so the accessStack don't need to be sorted
-	roomAmount = roomAmount
+	local roomAmount = genSettings.room_amount
 		or math.floor(roomGrid:getXSize() * roomGrid:getYSize() * roomGrid:getZSize() / (5 * 3 * 5))
 
 	local i = 1
