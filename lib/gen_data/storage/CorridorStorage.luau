@@ -28,8 +28,9 @@ end
 function CorridorStorage.removeCorridor(self: CorridorStorage, corridor: Corridor.Corridor)
 	for i, storedCorridor in ipairs(self._storage) do
 		if storedCorridor == corridor then
-			if i == 1 then
-				self._storage[1] = nil
+			-- if it is the last of the Storage
+			if self._storage[i + 1] == nil then
+				self._storage[i] = nil
 				break
 			end
 
