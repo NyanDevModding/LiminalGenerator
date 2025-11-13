@@ -1,6 +1,7 @@
 local Directions = require(script.Parent.Parent.Parent.gen_data.Directions)
 local FlagGrid = require(script.Parent.Parent.Parent.gen_data.FlagGrid)
 local IRoomStorable = require(script.Parent.Parent.Parent.gen_data.storage.IRoomStorable)
+local IAccessData = require(script.Parent.Parent.Parent.gen_setting.access.IAccessData)
 local DeadEndTileRoomData =
 	require(script.Parent.Parent.Parent.gen_setting.corridor_tile.uniform.DeadEndTileRoomData)
 local Access = require(script.Parent.Parent.access.Access)
@@ -68,6 +69,16 @@ end
 
 function Corridor.getPos(self: Corridor)
 	return self:getVertex(1)
+end
+
+--TODO add to spec
+function Corridor.getLength(self: Corridor)
+	local length = 0
+	for i = 2, self:getVertexAmount(), 1 do
+		length += (self:getVertex(i) - self:getVertex(i - 1)).Magnitude
+	end
+
+	return length
 end
 
 function Corridor.getAccessData(self: Corridor, accessNumero: number)
@@ -272,6 +283,14 @@ function Corridor.addVertex(self: Corridor, vertexNum: number)
 	end
 	local vertex = self._vertices[vertexNum]
 	self._vertices[vertexNum] = Vector3.new(vertex.X, vertex.Y, vertex.Z)
+end
+
+--TODO add in spec
+function Corridor.removeVertex(self: Corridor, vertexNum: number)
+	for i = vertexNum, self:getVertexAmount() - 1, 1 do
+		self._vertices[i] = self._vertices[i + 1]
+	end
+	self._vertices[self:getVertexAmount()] = nil
 end
 
 function Corridor.iterateVertices(self: Corridor)
