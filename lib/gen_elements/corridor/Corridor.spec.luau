@@ -50,11 +50,11 @@ return function()
 		end)
 		it("should handle adjacents rooms", function()
 			corridor:setAdjacent(TEST_WRAPPED_1, 1, TEST_ACCESS_1)
-			expect(corridor:getAccessData(1).access).to.equal(TEST_ACCESS_1)
+			expect(corridor:getAccessData(1)).to.equal(TEST_ACCESS_1)
 			corridor:setAdjacent(TEST_WRAPPED_2, 1, TEST_ACCESS_2)
-			expect(corridor:getAccessData(1).access).to.equal(TEST_ACCESS_2)
+			expect(corridor:getAccessData(1)).to.equal(TEST_ACCESS_2)
 			corridor:setAdjacent(TEST_WRAPPED_1, 2, TEST_ACCESS_1)
-			expect(corridor:getAccessData(2).access).to.equal(TEST_ACCESS_1)
+			expect(corridor:getAccessData(2)).to.equal(TEST_ACCESS_1)
 
 			local i = 0
 			for _ in corridor:iterateAdjacents() do

@@ -71,6 +71,22 @@ function Corridor.getPos(self: Corridor)
 	return self:getVertex(1)
 end
 
+function Corridor.getAdjacent(self: Corridor, accessNum: number)
+	return self._adjacents[accessNum]
+end
+
+function Corridor.changeAdjacent(
+	self: Corridor,
+	adjacent: IRoomStorable.IRoomStorable,
+	newAdjacent: IRoomStorable.IRoomStorable
+)
+	if self._adjacents[1] == adjacent then
+		self._adjacents[1] = newAdjacent
+	elseif self._adjacents[2] == adjacent then
+		self._adjacents[2] = newAdjacent
+	end
+end
+
 --TODO add to spec
 function Corridor.getLength(self: Corridor)
 	local length = 0
@@ -93,7 +109,7 @@ end
 -- something else to the room this access is currently bound to.
 function Corridor.createAccess(self: Corridor, accessNumero: number)
 	if accessNumero == 1 then
-		local accessPos = self._adjacents[1]:getPos() + self._firstAccess:getRelativePosition()
+		local accessPos = self:getVertex(1) - self._firstAccess:getDirection()
 		return Access.createAccess(
 			self._adjacents[1],
 			self._firstAccess,
@@ -103,7 +119,7 @@ function Corridor.createAccess(self: Corridor, accessNumero: number)
 		)
 	end
 
-	local accessPos = self._adjacents[2]:getPos() + self._secondAccess:getRelativePosition()
+	local accessPos = self:getVertex(self:getVertexAmount()) - self._secondAccess:getDirection()
 	return Access.createAccess(
 		self._adjacents[2],
 		self._secondAccess,
@@ -122,23 +138,11 @@ function Corridor.setAdjacent(
 	self._adjacents[accessNumero] = adjacent
 
 	if accessNumero == 1 then
-		self._firstAccess = Access.createAccess(
-			adjacent,
-			accessData,
-			self._firstAccess.x,
-			self._firstAccess.y,
-			self._firstAccess.z
-		)
+		self._firstAccess = accessData
 		return
 	end
 
-	self._secondAccess = Access.createAccess(
-		adjacent,
-		accessData,
-		self._secondAccess.x,
-		self._secondAccess.y,
-		self._secondAccess.z
-	)
+	self._secondAccess = accessData
 end
 
 function Corridor.iterateAdjacents(self: Corridor)

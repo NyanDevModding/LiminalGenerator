@@ -1,3 +1,4 @@
+local IRoomStorable = require(script.Parent.Parent.Parent.gen_data.storage.IRoomStorable)
 local RoomData = require(script.Parent.Parent.Parent.gen_setting.room.RoomData)
 
 -- implements IRoomStorable
@@ -44,8 +45,21 @@ function Room.isIncludingCell(self: Room, cellPos: Vector3)
 		and (minPos.Z <= cellPos.Z and cellPos.Z <= maxPos.Z)
 end
 
-function Room.setAdjacent(self: Room, adjacent: Room, accessNumero: number)
+function Room.setAdjacent(self: Room, adjacent: IRoomStorable.IRoomStorable, accessNumero: number)
 	self._adjacents[accessNumero] = adjacent
+end
+
+function Room.changeAdjacent(
+	self: Room,
+	adjacent: IRoomStorable.IRoomStorable,
+	newAdjacent: IRoomStorable.IRoomStorable
+)
+	for i, actualAdjacent in self:iterateAdjacents() do
+		if actualAdjacent == adjacent then
+			self._adjacents[i] = newAdjacent
+			return
+		end
+	end
 end
 
 function Room.check(self: Room, errorLog: string)
