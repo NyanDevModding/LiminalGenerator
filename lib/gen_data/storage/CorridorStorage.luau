@@ -28,7 +28,13 @@ end
 function CorridorStorage.removeCorridor(self: CorridorStorage, corridor: Corridor.Corridor)
 	for i, storedCorridor in ipairs(self._storage) do
 		if storedCorridor == corridor then
+			if i == 1 then
+				self._storage[1] = nil
+				break
+			end
+
 			self._storage[i] = self._storage[#self._storage]
+
 			break
 		end
 	end
