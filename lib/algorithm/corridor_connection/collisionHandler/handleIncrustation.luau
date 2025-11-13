@@ -100,7 +100,7 @@ return function(
 	roomStorage: RoomStorage.RoomStorage,
 	corridorGrid: FlagGrid.FlagGrid,
 	corridorStorage: CorridorStorage.CorridorStorage,
-	debugmode: boolean
+	debugMode: boolean
 )
 	local collision = corridor:getFirstCollision(corridorGrid)
 	local previousCollision
@@ -192,7 +192,7 @@ return function(
 			previousCollisionDirection = previousCollision - collision
 		end
 
-		if debugmode then
+		if debugMode then
 			coroutine.yield(
 				1,
 				collision,
@@ -257,7 +257,7 @@ return function(
 			)
 		end
 
-		if debugmode then
+		if debugMode then
 			coroutine.yield(2, roomGrid)
 		end
 
@@ -344,7 +344,7 @@ return function(
 			end
 		end
 
-		if debugmode then
+		if debugMode then
 			coroutine.yield(3, corridorStorage, collisionCorridor, newCollisionCorridor)
 		end
 
@@ -384,7 +384,7 @@ return function(
 			end
 		end
 
-		if debugmode then
+		if debugMode then
 			coroutine.yield(4, corridorStorage, corridor, newCorridor)
 		end
 
