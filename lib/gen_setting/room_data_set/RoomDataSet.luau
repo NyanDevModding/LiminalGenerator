@@ -61,6 +61,7 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 		-- Handle the room rotation and create 3 other room for the 3 other directions
 		local roomBaseSize = roomJson.size
 		local rotationMatrix = CFrame.Angles(0, 0, 0)
+		local baseRoomCenter = (roomBaseSize + Vector3.new(1, 0, 1)) / 2
 
 		-- Iterate the 3 directions: WEST, SOUTH, EAST
 		for rotationNum = 1, 3, 1 do
@@ -76,12 +77,19 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 			local newRoomCenter = (newRoomSize + Vector3.new(1, 0, 1)) / 2
 
 			-- Rotate the room accesses
-			local newRoomAccessDataJson = table.clone(roomJson.accesses)
+			local newRoomAccessDataJson = {}
+			for i, accessData in ipairs(roomJson.accesses) do
+				newRoomAccessDataJson[i] = {
+					type = accessData.type,
+					direction = accessData.direction,
+					position = accessData.direction,
+				}
+			end
 
 			--TODO do it without CFrame
 			for i, accessData in ipairs(roomJson.accesses) do
 				local accessDataPos = accessData.position + Vector3.new(0.5, 0, 0.5)
-				local centerRelativePos = accessDataPos - newRoomCenter
+				local centerRelativePos = accessDataPos - baseRoomCenter
 
 				local centerRelativeRotatedPos = rotationMatrix * centerRelativePos
 				local nonRelativePos = centerRelativeRotatedPos
