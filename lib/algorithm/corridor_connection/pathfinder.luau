@@ -85,7 +85,13 @@ return function(
 				or otherVertex.X > searchMax.X
 				or otherVertex.Y > searchMax.Y
 				or otherVertex.Z > searchMax.Z
-				or grid:get(otherVertex.X, otherVertex.Y, otherVertex.Z) == 1
+			then
+				continue
+			end
+
+			if
+				grid:get(otherVertex.X, otherVertex.Y, otherVertex.Z) == 1
+				and otherVertex ~= secondPos
 			then
 				continue
 			end
