@@ -213,19 +213,24 @@ function DisplayUtils.plotCorridorStorage(
 	local corridorGridFolder = Instance.new("Folder")
 	corridorColorDict = corridorColorDict or {}
 
-	for _, corridor in corridorStorage:iterateCorridor() do
+	for i, corridor in corridorStorage:iterateCorridor() do
+		local corridorFolder = Instance.new("Folder")
+		corridorFolder.Name = tostring(i)
+
 		local color = corridorColor or corridorColorDict[corridor] or Color3.fromRGB(0, 100, 0)
 
 		DisplayUtils.plotCorridor(
 			worldPos + Vector3.yAxis,
 			cellSize,
-			corridorGridFolder,
+			corridorFolder,
 			corridor,
 			vertexSize,
 			segmentSize,
 			transparency,
 			color
 		)
+
+		corridorFolder.Parent = corridorGridFolder
 	end
 
 	return corridorGridFolder
