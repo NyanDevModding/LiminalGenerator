@@ -7,16 +7,23 @@ export type IRoomStorable = {
 	setAdjacent: (
 		self: IRoomStorable,
 		adjacent: IRoomStorable,
-		accessNumero: number,
 		accessData: IAccessData.IAccessData
+	) -> (),
+	setAdjacentByNum: (
+		self: IRoomStorable,
+		adjacent: IRoomStorable,
+		accessNum: number
 	) -> (),
 	changeAdjacent: (
 		self: IRoomStorable,
 		adjacent: IRoomStorable,
 		newAdjacent: IRoomStorable
 	) -> (),
-	iterateAdjacents: (self: IRoomStorable) -> Vector3,
+	iterateAdjacents: (self: IRoomStorable) -> () -> (number, IRoomStorable),
 	isIncludingCell: (self: IRoomStorable, cellPos: Vector3) -> boolean,
+	iterateAccessDatas: (
+		self: IRoomStorable
+	) -> ({}, number, nil) -> (number, IAccessData.IAccessData),
 	check: (self: IRoomStorable, errorLog: string) -> Vector3,
 }
 

@@ -1,4 +1,5 @@
 local IRoomStorable = require(script.Parent.Parent.Parent.gen_data.storage.IRoomStorable)
+local IAccessData = require(script.Parent.Parent.Parent.gen_setting.access.IAccessData)
 local RoomData = require(script.Parent.Parent.Parent.gen_setting.room.RoomData)
 
 -- implements IRoomStorable
@@ -45,8 +46,21 @@ function Room.isIncludingCell(self: Room, cellPos: Vector3)
 		and (minPos.Z <= cellPos.Z and cellPos.Z <= maxPos.Z)
 end
 
-function Room.setAdjacent(self: Room, adjacent: IRoomStorable.IRoomStorable, accessNumero: number)
-	self._adjacents[accessNumero] = adjacent
+function Room.setAdjacent(
+	self: Room,
+	adjacent: IRoomStorable.IRoomStorable,
+	accessData: IAccessData.IAccessData
+)
+	for accessNum, thisAccessData in self._roomData:iterateAccessDatas() do
+		if thisAccessData == accessData then
+			self._adjacents[accessNum] = adjacent
+			return
+		end
+	end
+end
+
+function Room.setAdjacentByNum(self: Room, adjacent: IRoomStorable.IRoomStorable, accessNum: number)
+	self._adjacents[accessNum] = adjacent
 end
 
 function Room.changeAdjacent(
@@ -75,6 +89,10 @@ function Room.check(self: Room, errorLog: string)
 	end
 end
 
+function Room.iterateAccessDatas(self: Room)
+	return self._roomData:iterateAccessDatas()
+end
+
 local function adjacentsIterator(self: Room, i)
 	while true do
 		i += 1
@@ -84,7 +102,7 @@ local function adjacentsIterator(self: Room, i)
 		end
 
 		if self._adjacents[i] ~= nil then
-			return self._adjacents[i]
+			return i, self._adjacents[i]
 		end
 	end
 end
