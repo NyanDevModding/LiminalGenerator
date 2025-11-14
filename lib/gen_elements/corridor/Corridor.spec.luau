@@ -11,21 +11,28 @@ local Room = require(script.Parent.Parent.room.Room)
 
 local TEST_ACCESS_1 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.EAST)
 local TEST_ACCESS_2 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.WEST)
+local TEST_ACCESS_3 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.SOUTH)
+local TEST_ACCESS_4 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.NORTH)
 
 local TEST_ROOM_1 = RoomData.new("test_1", Vector3.new(0, 0, 0), { TEST_ACCESS_1 })
 local TEST_ROOM_2 = RoomData.new("test_2", Vector3.new(0, 0, 0), { TEST_ACCESS_2 })
-local TEST_ROOM_3 = RoomData.new("test_2", Vector3.new(0, 0, 0), { TEST_ACCESS_1, TEST_ACCESS_2 })
-
-local TEST_WRAPPED_1 = Room.new(Vector3.new(1, 2, 8), TEST_ROOM_1)
-local TEST_WRAPPED_2 = Room.new(Vector3.new(11, 2, 2), TEST_ROOM_2)
-local TEST_WRAPPED_3 = Room.new(Vector3.new(6, 2, 2), TEST_ROOM_3)
+local TEST_ROOM_3 = RoomData.new("test_3", Vector3.new(0, 0, 0), { TEST_ACCESS_1, TEST_ACCESS_2 })
+local TEST_ROOM_4 = RoomData.new("test_4", Vector3.new(0, 0, 0), { TEST_ACCESS_3 })
+local TEST_ROOM_5 = RoomData.new("test_5", Vector3.new(0, 0, 0), { TEST_ACCESS_4 })
 
 return function()
-	local firstAccess: Access.Access = TEST_ACCESS_1:wrap(TEST_WRAPPED_1) -- 2, 2, 8
-	local secondAccess: Access.Access = TEST_ACCESS_2:wrap(TEST_WRAPPED_2) -- 10, 2, 2
+	local testWrapped1, testWrapped2
+	local firstAccess: Access.Access -- 2, 2, 8
+	local secondAccess: Access.Access -- 10, 2, 2
 	local corridor: Corridor.Corridor
 
 	beforeEach(function()
+		testWrapped1 = Room.new(Vector3.new(1, 2, 8), TEST_ROOM_1)
+		testWrapped2 = Room.new(Vector3.new(11, 2, 2), TEST_ROOM_2)
+
+		firstAccess = TEST_ACCESS_1:wrap(testWrapped1) -- 2, 2, 8
+		secondAccess = TEST_ACCESS_2:wrap(testWrapped2) -- 10, 2, 2
+
 		corridor = Corridor.new(firstAccess, secondAccess)
 		corridor:addVertex(2) -- 2, 2, 2
 		corridor:setVertex(
@@ -36,6 +43,9 @@ return function()
 				secondAccess.z + secondAccess.direction.Z
 			)
 		)
+
+		testWrapped1:setAdjacentByNum(corridor, 1)
+		testWrapped2:setAdjacentByNum(corridor, 1)
 	end)
 
 	describe("Corridor", function()
@@ -49,12 +59,30 @@ return function()
 			)
 		end)
 		it("should handle adjacents rooms", function()
-			corridor:setAdjacent(TEST_WRAPPED_1, 1, TEST_ACCESS_1)
-			expect(corridor:getAccessData(1)).to.equal(TEST_ACCESS_1)
-			corridor:setAdjacent(TEST_WRAPPED_2, 1, TEST_ACCESS_2)
-			expect(corridor:getAccessData(1)).to.equal(TEST_ACCESS_2)
-			corridor:setAdjacent(TEST_WRAPPED_1, 2, TEST_ACCESS_1)
-			expect(corridor:getAccessData(2)).to.equal(TEST_ACCESS_1)
+			local testWrapped4 = Room.new(Vector3.new(2, 2, 9), TEST_ROOM_4)
+			local testWrapped5 = Room.new(Vector3.new(2, 2, 7), TEST_ROOM_5)
+			local testWrapped6 = Room.new(Vector3.new(7, 2, 3), TEST_ROOM_4)
+
+			corridor:setAdjacentByNum(testWrapped4, 1)
+			for i, adjacent in corridor:iterateAdjacents() do
+				if i == 1 then
+					expect(adjacent).to.equal(testWrapped4)
+				end
+			end
+
+			corridor:setAdjacentByNum(testWrapped5, 1)
+			for i, adjacent in corridor:iterateAdjacents() do
+				if i == 1 then
+					expect(adjacent).to.equal(testWrapped5)
+				end
+			end
+
+			corridor:setAdjacentByNum(testWrapped6, 2)
+			for i, adjacent in corridor:iterateAdjacents() do
+				if i == 2 then
+					expect(adjacent).to.equal(testWrapped6)
+				end
+			end
 
 			local i = 0
 			for _ in corridor:iterateAdjacents() do
@@ -166,20 +194,27 @@ return function()
 			expect(corridor:isIncludingCell(c3)).to.equal(true)
 		end)
 		it("should be able to divide itself into two corridor", function()
-			local newEndAccess = Access.createAccess(TEST_WRAPPED_3, TEST_ACCESS_2, 6, 2, 2)
-			local newStartAccess = Access.createAccess(TEST_WRAPPED_3, TEST_ACCESS_1, 6, 2, 2)
+			local testWrapped3 = Room.new(Vector3.new(6, 2, 2), TEST_ROOM_3)
+			local newEndAccess = Access.createAccess(testWrapped3, TEST_ACCESS_2, 6, 2, 2)
+			local newStartAccess = Access.createAccess(testWrapped3, TEST_ACCESS_1, 6, 2, 2)
 
-			local secondCorridor = corridor:divide(newEndAccess, newStartAccess)
-			expect(corridor:getVertex(1)).to.equal(Vector3.new(2, 2, 8))
-			expect(corridor:getVertex(2)).to.equal(Vector3.new(2, 2, 2))
-			expect(corridor:getVertex(3)).to.equal(Vector3.new(5, 2, 2))
+			local firstCorridor, secondCorridor = corridor:divide(newEndAccess, newStartAccess)
+			expect(firstCorridor:getVertex(1)).to.equal(Vector3.new(2, 2, 8))
+			expect(firstCorridor:getVertex(2)).to.equal(Vector3.new(2, 2, 2))
+			expect(firstCorridor:getVertex(3)).to.equal(Vector3.new(5, 2, 2))
 
 			expect(secondCorridor:getVertex(1)).to.equal(Vector3.new(7, 2, 2))
 			expect(secondCorridor:getVertex(2)).to.equal(Vector3.new(10, 2, 2))
 		end)
 		it("should return one of its accesses", function()
-			expect(corridor:getAccessData(1)).to.equal(TEST_ACCESS_1)
-			expect(corridor:getAccessData(2)).to.equal(TEST_ACCESS_2)
+			expect(corridor:getAccessData(1):getDirection()).to.equal(-TEST_ACCESS_1:getDirection())
+			expect(corridor:getAccessData(1):getAccessType()).to.equal(
+				TEST_ACCESS_1:getAccessType()
+			)
+			expect(corridor:getAccessData(2):getDirection()).to.equal(-TEST_ACCESS_2:getDirection())
+			expect(corridor:getAccessData(2):getAccessType()).to.equal(
+				TEST_ACCESS_2:getAccessType()
+			)
 		end)
 		it("should return the start direction of a vertex", function()
 			expect(corridor:getVertexStartingDirection(2)).to.equal(Directions.NORTH)
@@ -192,11 +227,11 @@ return function()
 				DeadEndTileRoomData.new(Directions.NORTH, 1, 1, Instance.new("Model"))
 
 			local vertex = corridor:getVertex(2)
-			local deadEndRoom = corridor:makeDeadEnd(deadEndData, 2)
+			local deadEndCorridor, deadEndRoom = corridor:makeDeadEnd(deadEndData, 2)
 
-			expect(corridor:getAccessData(2):getDirection()).to.equal(Directions.NORTH)
-			expect(corridor:getVertexAmount()).to.equal(2)
-			expect(corridor:getVertex(2)).to.equal(
+			expect(deadEndCorridor:getAccessData(2):getDirection()).to.equal(Directions.SOUTH)
+			expect(deadEndCorridor:getVertexAmount()).to.equal(2)
+			expect(deadEndCorridor:getVertex(2)).to.equal(
 				deadEndRoom:getPos() + deadEndData:getDirection()
 			)
 			expect(deadEndRoom:getPos()).to.equal(vertex)

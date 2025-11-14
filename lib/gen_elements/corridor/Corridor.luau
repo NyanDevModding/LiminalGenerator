@@ -1,6 +1,7 @@
 local Directions = require(script.Parent.Parent.Parent.gen_data.Directions)
 local FlagGrid = require(script.Parent.Parent.Parent.gen_data.FlagGrid)
 local IRoomStorable = require(script.Parent.Parent.Parent.gen_data.storage.IRoomStorable)
+local AccessData = require(script.Parent.Parent.Parent.gen_setting.access.AccessData)
 local IAccessData = require(script.Parent.Parent.Parent.gen_setting.access.IAccessData)
 local DeadEndTileRoomData =
 	require(script.Parent.Parent.Parent.gen_setting.corridor_tile.uniform.DeadEndTileRoomData)
@@ -34,8 +35,16 @@ function Corridor.new(firstAccess: Access.Access, secondAccess: Access.Access)
 
 	return setmetatable({
 		_adjacents = { firstAccess.room, secondAccess.room } :: { IRoomStorable.IRoomStorable },
-		_firstAccess = firstAccess.access,
-		_secondAccess = secondAccess.access,
+		_firstAccess = AccessData.new(
+			firstAccess.access:getAccessType(),
+			Vector3.zero,
+			-firstAccess.direction
+		),
+		_secondAccess = AccessData.new(
+			secondAccess.access:getAccessType(),
+			p2 - p1,
+			-secondAccess.direction
+		),
 		_vertices = { p1, p2 },
 	}, Corridor)
 end
@@ -61,8 +70,16 @@ function Corridor.newFromRooms(
 
 	return setmetatable({
 		_adjacents = { room1, room2 },
-		_firstAccess = accessData1,
-		_secondAccess = accessData2,
+		_firstAccess = AccessData.new(
+			accessData1:getAccessType(),
+			Vector3.zero,
+			-accessData1:getDirection()
+		),
+		_secondAccess = AccessData.new(
+			accessData2:getAccessType(),
+			p2 - p1,
+			-accessData2:getDirection()
+		),
 		_vertices = { p1, p2 },
 	}, Corridor) :: Corridor
 end
@@ -107,19 +124,14 @@ end
 
 -- Used when the Corridor is about to change to create the access to bind
 -- something else to the room this access is currently bound to.
-function Corridor.createAccess(self: Corridor, accessNumero: number)
+function Corridor.createAdjacentAccess(self: Corridor, accessNumero: number)
+	--TODO
 	if accessNumero == 1 then
-		local accessPos = self:getVertex(1) - self._firstAccess:getDirection()
-		return Access.createAccess(
-			self._adjacents[1],
-			self._firstAccess,
-			accessPos.X,
-			accessPos.Y,
-			accessPos.Z
-		)
+		local accessPos = self:getVertex(1)
+		return Access.createAccess(self._adjacents[1], self, accessPos.X, accessPos.Y, accessPos.Z)
 	end
 
-	local accessPos = self:getVertex(self:getVertexAmount()) - self._secondAccess:getDirection()
+	local accessPos = self:getVertex(self:getVertexAmount())
 	return Access.createAccess(
 		self._adjacents[2],
 		self._secondAccess,
@@ -132,17 +144,24 @@ end
 function Corridor.setAdjacent(
 	self: Corridor,
 	adjacent: IRoomStorable.IRoomStorable,
-	accessNumero: number,
 	accessData: IAccessData.IAccessData
 )
-	self._adjacents[accessNumero] = adjacent
-
-	if accessNumero == 1 then
-		self._firstAccess = accessData
-		return
+	local accessNumero
+	if self._firstAccess == accessData then
+		accessNumero = 1
+	else
+		accessNumero = 2
 	end
 
-	self._secondAccess = accessData
+	self._adjacents[accessNumero] = adjacent
+end
+
+function Corridor.setAdjacentByNum(
+	self: Corridor,
+	adjacent: IRoomStorable.IRoomStorable,
+	accessNum: number
+)
+	self._adjacents[accessNum] = adjacent
 end
 
 function Corridor.iterateAdjacents(self: Corridor)
@@ -446,9 +465,8 @@ function Corridor.getFirstVertexBefore(self: Corridor, pos: Vector3): number?
 	return nil
 end
 
--- The vertexNum is the numero of the vertex that is transformed or created
--- into the end vertex. Thus the vertexNum + 1 vertex is the start of the new
--- corridor.
+-- The divide method divides the Corridor into two other corridors but keep
+-- the divided one as is
 function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAccess: Access.Access)
 	local newStartAccessPos = Vector3.new(
 		newStartAccess.x + newStartAccess.direction.X,
@@ -461,63 +479,85 @@ function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAc
 		newEndAccess.z + newEndAccess.direction.Z
 	)
 
-	-- Check if both the accesses are included between the vertex and the next one.
-	if self._adjacents[2] == nil then
+	-- Corridor mitosis PLUH
+
+	-- Create the new corridor that occupy the first part of this one
+	local firstRoomAccessData
+	for accessNum, adjacent in self._adjacents[1]:iterateAdjacents() do
+		if adjacent == self then
+			firstRoomAccessData = self._adjacents[1]:getAccessData(accessNum)
+		end
+	end
+
+	if firstRoomAccessData == nil then
 		error(
-			"Error while dividing a corridor: expected the divided "
-				.. "corridor to have an adjacent room, got nil"
+			"Error while dividing a Corridor, expected the first "
+				.. "adjacent to be the adjacent of this corridor. Adjacent: "
+				.. tostring(self._adjacents[1])
 		)
 	end
 
-	-- If the vertex doesn't exist at the newEnd then create one.
-	local vertexNum = self:getFirstVertexBefore(newEndAccessPos)
-	if self:getVertex(vertexNum) ~= newEndAccessPos then
-		self:addVertex(vertexNum + 1)
-		self:setVertex(vertexNum + 1, newEndAccessPos)
-		vertexNum += 1
-	end
-
-	-- Corridor mitosis PLUH
+	-- Create the first half corridor
+	local startAccessPos = self._adjacents[1]:getPos() + firstRoomAccessData:getRelativePosition()
+	local halfCorridor1 = Corridor.new(
+		Access.createAccess(
+			self._adjacents[1],
+			firstRoomAccessData,
+			startAccessPos.X,
+			startAccessPos.Y,
+			startAccessPos.Z
+		),
+		newEndAccess
+	)
 
 	-- Create the new corridor that occupy the second part of this one
-	local secondEntrancePos = self:getVertex(self:getVertexAmount())
-	local newCorridor = Corridor.new(
+	local secondRoomAccessData
+	for accessNum, adjacent in self._adjacents[2]:iterateAdjacents() do
+		if adjacent == self then
+			secondRoomAccessData = self._adjacents[2]:getAccessData(accessNum)
+		end
+	end
+
+	if secondRoomAccessData == nil then
+		error(
+			"Error while dividing a Corridor, expected the second "
+				.. "adjacent to be the adjacent of this corridor. Adjacent: "
+				.. tostring(self._adjacents[2])
+		)
+	end
+
+	-- Create the second half corridor
+	local endRoomPos = self._adjacents[2]:getPos()
+	local halfCorridor2 = Corridor.new(
 		newStartAccess,
 		Access.createAccess(
 			self._adjacents[2],
-			self._secondAccess,
-			secondEntrancePos.X - self._secondAccess:getDirection().X,
-			secondEntrancePos.Y - self._secondAccess:getDirection().Y,
-			secondEntrancePos.Z - self._secondAccess:getDirection().Z
+			secondRoomAccessData,
+			endRoomPos.X + secondRoomAccessData:getRelativePosition().X,
+			endRoomPos.Y + secondRoomAccessData:getRelativePosition().Y,
+			endRoomPos.Z + secondRoomAccessData:getRelativePosition().Z
 		)
 	)
 
-	-- Change this corridor to the new access
-	self._secondAccess = newEndAccess.access
-	self._adjacents[2] = newEndAccess.room
-
-	local vertexAmount = #self._vertices
-
-	-- Delete the vertices between the access entrances
+	-- Define the vertex num of the new corridors
+	local firstVertexBeforeNewEnd = self:getFirstVertexBefore(newEndAccessPos)
 	local firstVertexBeforeNewStart = self:getFirstVertexBefore(newStartAccessPos)
-	for i = vertexNum + 1, firstVertexBeforeNewStart, 1 do
-		self._vertices[i] = nil
+
+	-- Fill the first halfCorridor
+	for i = 2, firstVertexBeforeNewEnd, 1 do
+		halfCorridor1:addVertex(i)
+		halfCorridor1:setVertex(i, self:getVertex(i))
 	end
 
-	-- i = firstVertexBeforeNewStart + 1 because the +0 is the newStartAccess
-	-- (vertexAmount - 1) because we exclude the endVertex
-	for i = firstVertexBeforeNewStart + 1, (vertexAmount - 1), 1 do
-		--TODO a better optimized way to do this
-		local newVertexNum = i - firstVertexBeforeNewStart + 1
-		newCorridor:addVertex(newVertexNum)
-		newCorridor:setVertex(newVertexNum, self._vertices[i])
-
-		-- + delete the duplicated part of this corridor
-		self._vertices[i] = nil
+	-- Fill the second halfCorridor
+	local i = 2
+	for _ = firstVertexBeforeNewStart + 1, self:getVertexAmount() - 1, 1 do
+		halfCorridor2:addVertex(i)
+		halfCorridor2:setVertex(i, self:getVertex(i))
+		i += 1
 	end
-	self._vertices[vertexAmount] = nil
 
-	return newCorridor
+	return halfCorridor1, halfCorridor2
 end
 
 --TODO fill() fills the gap between two vertices with other vertices.
@@ -630,20 +670,53 @@ function Corridor.makeDeadEnd(
 	deadEndTileRoomData: DeadEndTileRoomData.DeadEndTileRoomData,
 	vertexNum: number
 )
-	for i = vertexNum + 1, self:getVertexAmount(), 1 do
-		self._vertices[i] = nil
-	end
-	self._secondAccess = nil
-
 	local vertex = self:getVertex(vertexNum)
 
-	local newVertex = vertex + deadEndTileRoomData:getDirection()
 	local deadEndTileRoom = Room.new(vertex, deadEndTileRoomData)
 
-	self:setVertex(vertexNum, newVertex)
-	self._secondAccess = deadEndTileRoomData:getAccessData(1)
+	-- Create the new corridor with its new deadEnd
+	local firstRoomAccessData
+	for accessNum, adjacent in self._adjacents[1]:iterateAdjacents() do
+		if adjacent == self then
+			firstRoomAccessData = self._adjacents[2]:getAccessData(accessNum)
+		end
+	end
 
-	return deadEndTileRoom
+	if firstRoomAccessData == nil then
+		error(
+			"Error while making a deadEnd, expected the first "
+				.. "adjacent to be the adjacent of this corridor. Adjacent: "
+				.. tostring(self._adjacents[1])
+		)
+	end
+
+	-- Create the corridor
+	local startAccessPos = self._adjacents[1]:getPos() + firstRoomAccessData:getRelativePosition()
+	local deadEndVertexPos = deadEndTileRoom:getPos()
+		+ deadEndTileRoom:getAccessData(1):getRelativePosition()
+
+	local deadEndCorridor = Corridor.new(
+		Access.createAccess(
+			self._adjacents[1],
+			firstRoomAccessData,
+			startAccessPos.X,
+			startAccessPos.Y,
+			startAccessPos.Z
+		),
+		Access.createAccess(
+			deadEndTileRoom,
+			deadEndTileRoom:getAccessData(1),
+			deadEndVertexPos.X,
+			deadEndVertexPos.Y,
+			deadEndVertexPos.Z
+		)
+	)
+
+	return deadEndCorridor, deadEndTileRoom
+end
+
+function Corridor.iterateAccessDatas(self: Corridor)
+	return ipairs({ self._firstAccess, self._secondAccess })
 end
 
 -- Check if the corridor has all its segments right like if there is no
