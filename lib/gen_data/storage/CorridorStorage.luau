@@ -35,6 +35,7 @@ function CorridorStorage.removeCorridor(self: CorridorStorage, corridor: Corrido
 			end
 
 			self._storage[i] = self._storage[#self._storage]
+			self._storage[#self._storage] = nil
 
 			break
 		end
