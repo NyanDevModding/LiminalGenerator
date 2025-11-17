@@ -37,6 +37,10 @@ function Room.getAccessData(self: Room, accessNum: number)
 	return self._roomData:getAccessData(accessNum)
 end
 
+function Room.getAccessNum(self: Room, relativeEntrancePos: Vector3)
+	return self._roomData:getAccessNum(relativeEntrancePos)
+end
+
 function Room.isIncludingCell(self: Room, cellPos: Vector3)
 	local minPos = self:getPos()
 	local maxPos = self:getMaxPos()
