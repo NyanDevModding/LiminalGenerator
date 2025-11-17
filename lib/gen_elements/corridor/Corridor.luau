@@ -527,15 +527,15 @@ function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAc
 	end
 
 	-- Create the second half corridor
-	local endRoomPos = self._adjacents[2]:getPos()
+	local endAccessPos = self._adjacents[2]:getPos() + secondRoomAccessData:getRelativePosition()
 	local halfCorridor2 = Corridor.new(
 		newStartAccess,
 		Access.createAccess(
 			self._adjacents[2],
 			secondRoomAccessData,
-			endRoomPos.X + secondRoomAccessData:getRelativePosition().X,
-			endRoomPos.Y + secondRoomAccessData:getRelativePosition().Y,
-			endRoomPos.Z + secondRoomAccessData:getRelativePosition().Z
+			endAccessPos.X,
+			endAccessPos.Y,
+			endAccessPos.Z
 		)
 	)
 
@@ -551,9 +551,9 @@ function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAc
 
 	-- Fill the second halfCorridor
 	local i = 2
-	for _ = firstVertexBeforeNewStart + 1, self:getVertexAmount() - 1, 1 do
+	for j = firstVertexBeforeNewStart + 1, self:getVertexAmount() - 1, 1 do
 		halfCorridor2:addVertex(i)
-		halfCorridor2:setVertex(i, self:getVertex(i))
+		halfCorridor2:setVertex(i, self:getVertex(j))
 		i += 1
 	end
 
@@ -661,6 +661,20 @@ function Corridor.removeFromGrid(self: Corridor, grid: FlagGrid.FlagGrid)
 		volumeEnd.Y,
 		volumeEnd.Z
 	)
+end
+
+function Corridor.copyToCorridor(
+	self: Corridor,
+	other: Corridor,
+	from: number?,
+	to: number?,
+	offset: number?
+)
+	offset = offset or 0
+	for i = from or 1, to or self:getVertexAmount(), 1 do
+		other:addVertex(i + offset)
+		other:setVertex(i + offset, self:getVertex(i))
+	end
 end
 
 -- This method does not add to any storage the newly created deadEnd, you have
