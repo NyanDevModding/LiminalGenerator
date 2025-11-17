@@ -10,5 +10,5 @@ return {
 	NORTH_EAST = { Directions.NORTH, Directions.EAST },
 	WEST_SOUTH = { Directions.WEST, Directions.SOUTH },
 	WEST_EAST = { Directions.WEST, Directions.EAST },
-	SOUTH_EAST = { Directions.EAST, Directions.EAST },
+	SOUTH_EAST = { Directions.SOUTH, Directions.EAST },
 }
