@@ -8,7 +8,7 @@ local Directions = require(script.Parent.Parent.Parent.gen_data.Directions)
 local SimpleTileDirections = require(script.Parent.Parent.SimpleTileDirections)
 local ComplexTileDirections = require(script.Parent.Parent.ComplexTileDirections)
 
-local SimpleTileData = require(script.Parent.Parent.corridor_tile.uniform.SimpleTileData)
+local SimpleTileRoomData = require(script.Parent.Parent.corridor_tile.uniform.SimpleTileRoomData)
 local ComplexTileRoomData = require(script.Parent.Parent.corridor_tile.uniform.ComplexTileRoomData)
 local DeadEndTileRoomData = require(script.Parent.Parent.corridor_tile.uniform.DeadEndTileRoomData)
 
@@ -144,7 +144,7 @@ local function readCorridorDataSet(
 	roomList: { RoomData.RoomData }
 )
 	local uniformTileDict = {
-		simple = {} :: { SimpleTileData.SimpleTileData },
+		simple = {} :: { SimpleTileRoomData.SimpleTileRoomData },
 		complex = {} :: { ComplexTileRoomData.ComplexTileRoomData },
 		deadEnd = {} :: { DeadEndTileRoomData.DeadEndTileRoomData },
 	}
@@ -152,15 +152,15 @@ local function readCorridorDataSet(
 	for typeNum, uniformTileSet in ipairs(setData.uniform_tiles) do
 		-- Handle Simple uniform tiles data
 		for direction, simpleTileData in pairs(uniformTileSet.simple_tiles) do
-			table.insert(
-				uniformTileDict.simple,
-				SimpleTileData.new(
-					direction,
-					typeNum or 1,
-					simpleTileData.thickness or 1,
-					simpleTileData.model or DEFAULT_MODEL
-				)
+			local tile = SimpleTileRoomData.new(
+				direction,
+				typeNum or 1,
+				simpleTileData.thickness or 1,
+				simpleTileData.model or DEFAULT_MODEL
 			)
+
+			table.insert(uniformTileDict.complex, tile)
+			table.insert(roomList, tile)
 		end
 
 		-- Handle Complex uniform tiles data
