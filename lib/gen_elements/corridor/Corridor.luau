@@ -33,8 +33,15 @@ function Corridor.new(firstAccess: Access.Access, secondAccess: Access.Access)
 		)
 	end
 
+	local firstAccessNum =
+		firstAccess.room:getAccessNum(firstAccess.access:getRelativeEntrancePos())
+
+	local secondAccessNum =
+		secondAccess.room:getAccessNum(secondAccess.access:getRelativeEntrancePos())
+
 	return setmetatable({
 		_adjacents = { firstAccess.room, secondAccess.room } :: { IRoomStorable.IRoomStorable },
+		_adjacentAccessNums = { firstAccessNum, secondAccessNum },
 		_firstAccess = AccessData.new(
 			firstAccess.access:getAccessType(),
 			Vector3.zero,
@@ -70,6 +77,7 @@ function Corridor.newFromRooms(
 
 	return setmetatable({
 		_adjacents = { room1, room2 },
+		_adjacentAccessNums = { accessNum1, accessNum2 },
 		_firstAccess = AccessData.new(
 			accessData1:getAccessType(),
 			Vector3.zero,
@@ -92,24 +100,14 @@ function Corridor.getAdjacent(self: Corridor, accessNum: number)
 	return self._adjacents[accessNum]
 end
 
-function Corridor.changeAdjacent(
-	self: Corridor,
-	adjacent: IRoomStorable.IRoomStorable,
-	newAdjacent: IRoomStorable.IRoomStorable
-)
-	if self._adjacents[1] == adjacent then
-		self._adjacents[1] = newAdjacent
-	elseif self._adjacents[2] == adjacent then
-		self._adjacents[2] = newAdjacent
-	end
-end
-
---TODO add to spec
 function Corridor.getLength(self: Corridor)
 	local length = 0
 	for i = 2, self:getVertexAmount(), 1 do
 		length += (self:getVertex(i) - self:getVertex(i - 1)).Magnitude
 	end
+
+	-- the last vertex
+	length += 1
 
 	return length
 end
@@ -124,21 +122,52 @@ end
 
 -- Used when the Corridor is about to change to create the access to bind
 -- something else to the room this access is currently bound to.
-function Corridor.createAdjacentAccess(self: Corridor, accessNumero: number)
-	--TODO
-	if accessNumero == 1 then
-		local accessPos = self:getVertex(1)
-		return Access.createAccess(self._adjacents[1], self, accessPos.X, accessPos.Y, accessPos.Z)
+function Corridor.createAdjacentAccess(self: Corridor, adjacentNum: number)
+	local adjacent = self._adjacents[adjacentNum]
+	local accessData = adjacent:getAccessData(self._adjacentAccessNums[adjacentNum])
+	local accessPos = adjacent:getPos() + accessData:getRelativePosition()
+
+	return Access.createAccess(adjacent, accessData, accessPos.X, accessPos.Y, accessPos.Z)
+end
+
+local function _getAdjacentAccessNum(
+	self: Corridor,
+	vertex: Vector3,
+	adjacent: IRoomStorable.IRoomStorable
+)
+	local accessNum = adjacent:getAccessNum(vertex - adjacent:getPos())
+
+	if accessNum == nil then
+		error(
+			"Error while getting an adjacent accessNum in the corridor: "
+				.. "Expected it to have an access at the position of the first cell of this "
+				.. "of this corridor, got a nil accessNum."
+		)
 	end
 
-	local accessPos = self:getVertex(self:getVertexAmount())
-	return Access.createAccess(
-		self._adjacents[2],
-		self._secondAccess,
-		accessPos.X,
-		accessPos.Y,
-		accessPos.Z
-	)
+	-- Check that the accessData respects the accesses of this corridor
+
+	local thisAccessData = if vertex == self:getVertex(1)
+		then self._firstAccess
+		else self._secondAccess
+	local accessData = adjacent:getAccessData(accessNum)
+	if
+		adjacent:getPos() + accessData:getRelativePosition()
+		~= self:getPos() + thisAccessData:getRelativeEntrancePos()
+	then
+		error(
+			(
+				"Error while getting an adjacent accessNum in the corridor: "
+				.. "Expected it to connect its access with the corridor's, Got :"
+				.. "otherAccessPos = {%s} and thisEntrancePos = {%s}"
+			):format(
+				tostring(adjacent:getPos() + accessData:getRelativePosition()),
+				tostring(self:getPos() + thisAccessData:getRelativeEntrancePos())
+			)
+		)
+	end
+
+	return accessNum
 end
 
 function Corridor.setAdjacent(
@@ -146,14 +175,21 @@ function Corridor.setAdjacent(
 	adjacent: IRoomStorable.IRoomStorable,
 	accessData: IAccessData.IAccessData
 )
-	local accessNumero
 	if self._firstAccess == accessData then
-		accessNumero = 1
-	else
-		accessNumero = 2
+		self:setAdjacentByNum(adjacent, 1)
+		return
+	elseif self._secondAccess == accessData then
+		self:setAdjacentByNum(adjacent, 2)
+		return
 	end
 
-	self._adjacents[accessNumero] = adjacent
+	error(
+		(
+			"Error while setting an adjacent in a Corridor: Expected the accessData "
+			.. "to be one of those in the Corridor, got accessData: %s and in "
+			.. "corridor's accessDatas: {%s, %s}"
+		):format(tostring(accessData), tostring(self._firstAccess), tostring(self._secondAccess))
+	)
 end
 
 function Corridor.setAdjacentByNum(
@@ -161,7 +197,50 @@ function Corridor.setAdjacentByNum(
 	adjacent: IRoomStorable.IRoomStorable,
 	accessNum: number
 )
-	self._adjacents[accessNum] = adjacent
+	if accessNum == 1 then
+		self._adjacents[1] = adjacent
+
+		-- Update the accessNum of the adjacent inside of this corridor
+		local otherAccessNum = _getAdjacentAccessNum(self, self:getVertex(1), adjacent)
+		self._adjacentAccessNums[1] = otherAccessNum
+
+		return
+	elseif accessNum == 2 then
+		self._adjacents[2] = adjacent
+
+		-- Update the accessNum of the adjacent inside of this corridor
+		local otherAccessNum =
+			_getAdjacentAccessNum(self, self:getVertex(self:getVertexAmount()), adjacent)
+		self._adjacentAccessNums[2] = otherAccessNum
+
+		return
+	end
+
+	error(
+		(
+			"Error while setting an adjacent in a Corridor: Expected the accessNum "
+			.. "to be either 1 or 2, got accessNum: %s"
+		):format(tostring(accessNum))
+	)
+end
+
+function Corridor.changeAdjacent(
+	self: Corridor,
+	adjacent: IRoomStorable.IRoomStorable,
+	newAdjacent: IRoomStorable.IRoomStorable
+)
+	if self._adjacents[1] == adjacent then
+		local accessNum = _getAdjacentAccessNum(self, self:getVertex(1), newAdjacent)
+
+		self._adjacentAccessNums[1] = accessNum
+		self._adjacents[1] = newAdjacent
+	elseif self._adjacents[2] == adjacent then
+		local accessNum =
+			_getAdjacentAccessNum(self, self:getVertex(self:getVertexAmount()), newAdjacent)
+
+		self._adjacentAccessNums[2] = accessNum
+		self._adjacents[2] = newAdjacent
+	end
 end
 
 function Corridor.iterateAdjacents(self: Corridor)
@@ -308,7 +387,6 @@ function Corridor.addVertex(self: Corridor, vertexNum: number)
 	self._vertices[vertexNum] = Vector3.new(vertex.X, vertex.Y, vertex.Z)
 end
 
---TODO add in spec
 function Corridor.removeVertex(self: Corridor, vertexNum: number)
 	for i = vertexNum, self:getVertexAmount() - 1, 1 do
 		self._vertices[i] = self._vertices[i + 1]
@@ -357,10 +435,26 @@ local function _intersectWithVerticalLine(self: Corridor, firstPos: Vector3, len
 	for _, vertex in self:iterateMiddleVertices() do
 		-- Check if it intersects with the line
 		if
-			firstPos.Z <= vertex.Z
-			and vertex.Z <= firstPos.Z + length
-			and previousVertex.X <= firstPos.X
-			and firstPos.X <= vertex.X
+			(
+				(firstPos.X ~= vertex.X and firstPos ~= previousVertex.X) -- prevents from fused vertical lines
+				and (
+					firstPos.Z <= vertex.Z
+					and vertex.Z <= firstPos.Z + length
+					and previousVertex.X <= firstPos.X
+					and firstPos.X <= vertex.X
+				)
+			)
+			or (
+				(firstPos.X == vertex.X and firstPos.X == previousVertex.X) -- they can be fused
+				and ( -- thus they need to be included in the vertical line
+					(firstPos.Z <= vertex.Z and vertex.Z <= firstPos.Z + length) -- vertex in the line
+					or (firstPos.Z <= previousVertex.Z and previousVertex.Z <= firstPos.Z + length) -- previousVertex in the line
+					or (
+						Vector3.min(previousVertex, vertex).Z <= firstPos.Z
+						and firstPos.Z + length <= Vector3.max(previousVertex, vertex).Z
+					) -- line between vertex and previousVertex
+				)
+			)
 		then
 			return Vector3.new(firstPos.X, vertex.Y, vertex.Z)
 		end
@@ -386,10 +480,27 @@ local function _intersectWithHorizontalLine(self: Corridor, firstPos: Vector3, l
 	for _, vertex in self:iterateMiddleVertices() do
 		-- Check if it intersects with the line
 		if
-			firstPos.X <= vertex.X
-			and vertex.X <= firstPos.X + length
-			and previousVertex.Z <= firstPos.Z
-			and firstPos.Z <= vertex.Z
+
+			(
+				(firstPos.Z ~= vertex.Z and firstPos ~= previousVertex.Z) -- prevents from fused vertical lines
+				and (
+					firstPos.X <= vertex.X
+					and vertex.X <= firstPos.X + length
+					and previousVertex.Z <= firstPos.Z
+					and firstPos.Z <= vertex.Z
+				)
+			)
+			or (
+				(firstPos.Z == vertex.Z and firstPos.Z == previousVertex.Z) -- they can be fused
+				and ( -- thus they need to be included in the vertical line
+					(firstPos.X <= vertex.X and vertex.X <= firstPos.X + length) -- vertex in the line
+					or (firstPos.X <= previousVertex.X and previousVertex.X <= firstPos.Z + length) -- previousVertex in the line
+					or (
+						Vector3.min(previousVertex, vertex).X <= firstPos.X
+						and firstPos.X + length <= Vector3.max(previousVertex, vertex).X
+					) -- line between vertex and previousVertex
+				)
+			)
 		then
 			return Vector3.new(vertex.X, vertex.Y, firstPos.Z)
 		end
@@ -410,19 +521,26 @@ local function _intersectWithHorizontalLine(self: Corridor, firstPos: Vector3, l
 	return nil
 end
 
--- TODO add in spec
 function Corridor.getFirstCollisionWith(self: Corridor, otherCorridor: Corridor)
 	local otherPreviousVertex = otherCorridor:getVertex(1)
 
 	for _, otherVertex in otherCorridor:iterateMiddleVertices() do
+		local firstPos = Vector3.min(otherVertex, otherPreviousVertex)
 		local line = otherVertex - otherPreviousVertex
-		local firstPos = Vector3.new(math.abs(line.X), math.abs(line.Y), math.abs(line.Z))
 
 		local intersection = nil
-		if firstPos.X == 0 then
+		if line.X == 0 then
 			intersection = _intersectWithVerticalLine(self, firstPos, line.Magnitude)
-		else
+		elseif line.Z == 0 then
 			intersection = _intersectWithHorizontalLine(self, firstPos, line.Magnitude)
+		else
+			error(
+				(
+					"Error while getting the first collision of a corridor with another, "
+					.. " Expected the otherCorridor to be ok, Got a diagonal line between two "
+					.. "vertices: {%s} and {%s}"
+				):format(tostring(otherPreviousVertex), tostring(otherVertex))
+			)
 		end
 
 		if intersection ~= nil then
@@ -435,7 +553,6 @@ function Corridor.getFirstCollisionWith(self: Corridor, otherCorridor: Corridor)
 	return nil
 end
 
---TODO add to spec
 function Corridor.getFirstVertexBefore(self: Corridor, pos: Vector3): number?
 	for i = 1, self:getVertexAmount() - 1, 1 do
 		local vertex = self:getVertex(i)
@@ -482,18 +599,14 @@ function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAc
 	-- Corridor mitosis PLUH
 
 	-- Create the new corridor that occupy the first part of this one
-	local firstRoomAccessData
-	for accessNum, adjacent in self._adjacents[1]:iterateAdjacents() do
-		if adjacent == self then
-			firstRoomAccessData = self._adjacents[1]:getAccessData(accessNum)
-		end
-	end
+	local firstRoomAccessData = self._adjacents[1]:getAccessData(self._adjacentAccessNums[1])
 
 	if firstRoomAccessData == nil then
 		error(
-			"Error while dividing a Corridor, expected the first "
-				.. "adjacent to be the adjacent of this corridor. Adjacent: "
-				.. tostring(self._adjacents[1])
+			(
+				"Error while dividing a Corridor, expected the first "
+				.. "adjacent to include accessData n°%s. Adjacent: %s"
+			):format(tostring(self._adjacentAccessNums[1]), tostring(self._adjacents[1]))
 		)
 	end
 
@@ -511,18 +624,14 @@ function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAc
 	)
 
 	-- Create the new corridor that occupy the second part of this one
-	local secondRoomAccessData
-	for accessNum, adjacent in self._adjacents[2]:iterateAdjacents() do
-		if adjacent == self then
-			secondRoomAccessData = self._adjacents[2]:getAccessData(accessNum)
-		end
-	end
+	local secondRoomAccessData = self._adjacents[2]:getAccessData(self._adjacentAccessNums[2])
 
 	if secondRoomAccessData == nil then
 		error(
-			"Error while dividing a Corridor, expected the second "
-				.. "adjacent to be the adjacent of this corridor. Adjacent: "
-				.. tostring(self._adjacents[2])
+			(
+				"Error while dividing a Corridor, expected the second "
+				.. "adjacent to include accessData n°%s. Adjacent: %s"
+			):format(tostring(self._adjacentAccessNums[2]), tostring(self._adjacents[2]))
 		)
 	end
 
@@ -543,10 +652,20 @@ function Corridor.divide(self: Corridor, newEndAccess: Access.Access, newStartAc
 	local firstVertexBeforeNewEnd = self:getFirstVertexBefore(newEndAccessPos)
 	local firstVertexBeforeNewStart = self:getFirstVertexBefore(newStartAccessPos)
 
+	-- Check that the first vertex before new end isn't THE vertex before new end
+	if self:getVertex(firstVertexBeforeNewEnd) == newEndAccessPos then
+		firstVertexBeforeNewEnd -= 1
+	end
+
 	-- Fill the first halfCorridor
 	for i = 2, firstVertexBeforeNewEnd, 1 do
 		halfCorridor1:addVertex(i)
 		halfCorridor1:setVertex(i, self:getVertex(i))
+	end
+
+	-- Check that the first vertex before new start isn't THE vertex before new start
+	if self:getVertex(firstVertexBeforeNewStart) == newStartAccess then
+		firstVertexBeforeNewStart += 1
 	end
 
 	-- Fill the second halfCorridor
@@ -689,18 +808,14 @@ function Corridor.makeDeadEnd(
 	local deadEndTileRoom = Room.new(vertex, deadEndTileRoomData)
 
 	-- Create the new corridor with its new deadEnd
-	local firstRoomAccessData
-	for accessNum, adjacent in self._adjacents[1]:iterateAdjacents() do
-		if adjacent == self then
-			firstRoomAccessData = self._adjacents[2]:getAccessData(accessNum)
-		end
-	end
+	local firstRoomAccessData = self._adjacents[1]:getAccessData(self._adjacentAccessNums[1])
 
 	if firstRoomAccessData == nil then
 		error(
-			"Error while making a deadEnd, expected the first "
-				.. "adjacent to be the adjacent of this corridor. Adjacent: "
-				.. tostring(self._adjacents[1])
+			(
+				"Error while making a deadEnd, expected the first "
+				.. "adjacent to include accessData n°%s. Adjacent: %s"
+			):format(tostring(self._adjacentAccessNums[1]), tostring(self._adjacents[1]))
 		)
 	end
 

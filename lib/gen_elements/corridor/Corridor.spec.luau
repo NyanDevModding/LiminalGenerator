@@ -58,10 +58,30 @@ return function()
 				)
 			)
 		end)
+		it("should return the length in cells of the corridor", function()
+			expect(corridor:getLength()).to.equal(15)
+		end)
+		it("should create the access of one of its adjacents", function()
+			local access1 = corridor:createAdjacentAccess(1)
+
+			expect(access1.room).to.equal(testWrapped1)
+			expect(access1.access).to.equal(TEST_ACCESS_1)
+			expect(access1.x).to.equal(1)
+			expect(access1.y).to.equal(2)
+			expect(access1.z).to.equal(8)
+
+			local access2 = corridor:createAdjacentAccess(2)
+
+			expect(access2.room).to.equal(testWrapped2)
+			expect(access2.access).to.equal(TEST_ACCESS_2)
+			expect(access2.x).to.equal(11)
+			expect(access2.y).to.equal(2)
+			expect(access2.z).to.equal(2)
+		end)
 		it("should handle adjacents rooms", function()
-			local testWrapped4 = Room.new(Vector3.new(2, 2, 9), TEST_ROOM_4)
-			local testWrapped5 = Room.new(Vector3.new(2, 2, 7), TEST_ROOM_5)
-			local testWrapped6 = Room.new(Vector3.new(7, 2, 3), TEST_ROOM_4)
+			local testWrapped4 = Room.new(Vector3.new(1, 2, 8), TEST_ROOM_1)
+			local testWrapped5 = Room.new(Vector3.new(1, 2, 8), TEST_ROOM_3)
+			local testWrapped6 = Room.new(Vector3.new(11, 2, 2), TEST_ROOM_3)
 
 			corridor:setAdjacentByNum(testWrapped4, 1)
 			for i, adjacent in corridor:iterateAdjacents() do
@@ -90,7 +110,7 @@ return function()
 			end
 			expect(i).to.equal(2)
 		end)
-		it("should retrurn its vertices", function()
+		it("should return its vertices", function()
 			expect(corridor:getVertex(1)).to.be.ok()
 			expect(corridor:getVertex(2)).to.be.ok()
 			expect(corridor:getVertex(3)).to.be.ok()
@@ -100,7 +120,7 @@ return function()
 			corridor:addVertex(2)
 			expect(corridor:getVertexAmount()).to.equal(4)
 		end)
-		it("should mododify a vertex pos", function()
+		it("should modify a vertex pos", function()
 			corridor:addVertex(2)
 			corridor:setVertex(
 				2,
@@ -118,6 +138,12 @@ return function()
 					secondAccess.z + firstAccess.direction.Z + 2
 				)
 			)
+		end)
+		it("should remove a vertex", function()
+			corridor:addVertex(2)
+			corridor:removeVertex(3)
+
+			expect(corridor:getVertexAmount()).to.equal(3)
 		end)
 		it("should be able to invert a vertex", function()
 			corridor:invert(2)
@@ -174,6 +200,54 @@ return function()
 
 			grid:set(collision3.X, collision3.Y, collision3.Z)
 			expect(corridor:getFirstCollision(grid)).to.equal(collision3)
+		end)
+		it("should return the first collision with another corridor", function()
+			local firstCollision = Vector3.new(4, 2, 2)
+			local secondCollision = Vector3.new(5, 2, 2)
+
+			local otherRoom1 = Room.new(Vector3.new(4, 2, 4), TEST_ROOM_4)
+			local otherRoom2 = Room.new(Vector3.new(6, 2, 4), TEST_ROOM_4)
+
+			local otherCorridor = Corridor.new(
+				Access.createAccess(otherRoom1, otherRoom1:getAccessData(1), 4, 2, 4),
+				Access.createAccess(otherRoom2, otherRoom2:getAccessData(1), 6, 2, 4)
+			)
+			otherCorridor:addVertex(2)
+			otherCorridor:setVertex(2, Vector3.new(4, 2, 2))
+
+			otherCorridor:addVertex(3)
+			otherCorridor:setVertex(3, Vector3.new(6, 2, 2))
+
+			expect(corridor:getFirstCollisionWith(otherCorridor)).to.equal(firstCollision)
+
+			-- Move the corridor
+			local otherRoom3 = Room.new(Vector3.new(5, 2, 4), TEST_ROOM_4)
+
+			local anotherCorridor = Corridor.new(
+				Access.createAccess(otherRoom3, otherRoom3:getAccessData(1), 5, 2, 4),
+				Access.createAccess(otherRoom2, otherRoom2:getAccessData(1), 6, 2, 4)
+			)
+			anotherCorridor:addVertex(2)
+			anotherCorridor:setVertex(2, Vector3.new(5, 2, 2))
+
+			anotherCorridor:addVertex(3)
+			anotherCorridor:setVertex(3, Vector3.new(6, 2, 2))
+
+			expect(corridor:getFirstCollisionWith(anotherCorridor)).to.equal(secondCollision)
+		end)
+		it("should return the first vertex before a position", function()
+			expect(corridor:getFirstVertexBefore(Vector3.new(2, 2, 7))).to.equal(1)
+			expect(corridor:getFirstVertexBefore(Vector3.new(2, 2, 8))).to.equal(1)
+			expect(corridor:getFirstVertexBefore(Vector3.new(2, 2, 2))).to.equal(2)
+			expect(corridor:getFirstVertexBefore(Vector3.new(8, 2, 2))).to.equal(2)
+			expect(corridor:getFirstVertexBefore(Vector3.new(10, 2, 2))).to.equal(3)
+
+			corridor:addVertex(3)
+			corridor:setVertex(3, Vector3.new(5, 2, 2))
+			expect(corridor:getFirstVertexBefore(Vector3.new(4, 2, 2))).to.equal(2)
+			expect(corridor:getFirstVertexBefore(Vector3.new(5, 2, 2))).to.equal(3)
+			expect(corridor:getFirstVertexBefore(Vector3.new(6, 2, 2))).to.equal(3)
+			expect(corridor:getFirstVertexBefore(Vector3.new(10, 2, 2))).to.equal(4)
 		end)
 		it("should check if a cell is included in the corridor", function()
 			local c1 = Vector3.new(7, 2, 2)
