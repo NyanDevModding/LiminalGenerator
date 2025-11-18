@@ -12,13 +12,13 @@ local Room = require(script.Parent.Parent.room.Room)
 local TEST_ACCESS_1 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.EAST)
 local TEST_ACCESS_2 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.WEST)
 local TEST_ACCESS_3 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.SOUTH)
-local TEST_ACCESS_4 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.NORTH)
+-- local TEST_ACCESS_4 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.NORTH)
 
 local TEST_ROOM_1 = RoomData.new("test_1", Vector3.new(0, 0, 0), { TEST_ACCESS_1 })
 local TEST_ROOM_2 = RoomData.new("test_2", Vector3.new(0, 0, 0), { TEST_ACCESS_2 })
 local TEST_ROOM_3 = RoomData.new("test_3", Vector3.new(0, 0, 0), { TEST_ACCESS_1, TEST_ACCESS_2 })
 local TEST_ROOM_4 = RoomData.new("test_4", Vector3.new(0, 0, 0), { TEST_ACCESS_3 })
-local TEST_ROOM_5 = RoomData.new("test_5", Vector3.new(0, 0, 0), { TEST_ACCESS_4 })
+-- local TEST_ROOM_5 = RoomData.new("test_5", Vector3.new(0, 0, 0), { TEST_ACCESS_4 })
 
 return function()
 	local testWrapped1, testWrapped2
