@@ -6,13 +6,11 @@ local FlagGrid = require(ReplicatedStorage.LiminalGenerator.gen_data.FlagGrid)
 local Iris = require(ReplicatedStorage.Packages.iris)
 
 local displayGeneratorTest = require(ReplicatedStorage.Test.displayGeneratorTest)
+local displayHandleIncrustation =
+	require(ReplicatedStorage.Test.algorithm.displayHandleIncrustation)
 local displayPathfinder = require(ReplicatedStorage.Test.algorithm.displayPathfinder)
 
 local default_data_set = require(ReplicatedStorage.TestAssets.data.default_data_set)
-
-local DEFAULT_GEN_SETTINGS = {
-	[Settings.DEAD_END_LUCK] = 512,
-}
 
 local DATA_SET_NAMES = {
 	default_data_set.data_set_name,
@@ -22,9 +20,26 @@ local TEST_ROOM_DATA_SET_JSONS = {
 	[default_data_set.data_set_name] = default_data_set,
 }
 
+-- Handle incrustation test
+local PRESETS_NAME = {
+	"simple_cross",
+	"single_side_fused",
+	"single_vertex_fused",
+	"multiple_collision_no_fuse",
+	"multiple_collision_fuse",
+	"mixed_collision", -- fused and not fused
+	"vertex_collision", -- corridor making turns but still collides
+}
+local PRESETS_NUM = {}
+
+for num, presetName in pairs(PRESETS_NAME) do
+	PRESETS_NUM[presetName] = num
+end
+
 Iris.Init()
 
 local rConnection: RBXScriptConnection?
+local fConnection: RBXScriptConnection?
 
 Iris:Connect(function()
 	Iris.Window("Test Mode")
@@ -78,9 +93,53 @@ Iris:Connect(function()
 	end
 	Iris.End()
 
+	Iris.CollapsingHeader({ "Test handle incrustation algorithm" })
+	do
+		local key = Iris.State(Enum.KeyCode.F)
+		Iris.ComboEnum({ "Key to press to step the algorithm" }, { index = key }, Enum.KeyCode)
+
+		local worldPos = Iris.State(Vector3.new(0, 5, 0))
+		Iris.InputVector3({ "Position of the grid" }, { number = worldPos })
+
+		local cellSize = Iris.State(10)
+		Iris.InputNum({ "Size of a grid cell" }, { number = cellSize })
+
+		local presetName = Iris.State(PRESETS_NAME[2])
+		Iris.ComboArray({ "The preset to use for testing" }, { index = presetName }, PRESETS_NAME)
+
+		local doDisplay = Iris.State(true)
+		Iris.Checkbox({ "Display the test" }, { isChecked = doDisplay })
+
+		local button = Iris.Button({ "start" })
+		if button.clicked() then
+			if fConnection then
+				fConnection:Disconnect()
+			end
+
+			if workspace:FindFirstChild("incrustation_collision_grid") then
+				workspace:FindFirstChild("incrustation_collision_grid"):Destroy()
+			end
+
+			local folder = Instance.new("Folder")
+			folder.Name = "incrustation_collision_grid"
+
+			fConnection = displayHandleIncrustation(
+				key.value,
+				worldPos.value,
+				cellSize.value,
+				folder,
+				PRESETS_NUM[presetName.value],
+				doDisplay.value
+			)
+
+			folder.Parent = workspace
+		end
+	end
+	Iris.End()
+
 	Iris.CollapsingHeader({ "Test the Generator" })
 	do
-		local delta = Iris.State(0.1)
+		local delta = Iris.State(1)
 		Iris.InputNum(
 			{ "Time to wait between two steps. Enter 0 if you dont want to wait" },
 			{ number = delta }
@@ -101,7 +160,7 @@ Iris:Connect(function()
 		local seed = Iris.State(543434512)
 		Iris.InputNum({ "The Generation seed" }, { number = seed })
 
-		local roomAmount = Iris.State(20)
+		local roomAmount = Iris.State(5)
 		Iris.InputNum({ "The amount of rooms to spawn" }, { number = roomAmount })
 
 		local roomDataSetName = Iris.State(DATA_SET_NAMES[1])
@@ -113,8 +172,8 @@ Iris:Connect(function()
 
 		local button = Iris.Button({ "start" })
 		if button.clicked() then
-			if workspace:FindFirstChild("generated") then
-				workspace:FindFirstChild("generated"):Destroy()
+			if workspace:FindFirstChild("generator_test") then
+				workspace:FindFirstChild("generator_test"):Destroy()
 			end
 
 			task.defer(function()
