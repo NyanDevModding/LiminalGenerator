@@ -243,6 +243,12 @@ function Corridor.changeAdjacent(
 	end
 end
 
+-- Set the adjacents' adjacent to this corridor
+function Corridor.connectToAdjacents(self: Corridor)
+	self._adjacents[1]:setAdjacentByNum(self, self._adjacentAccessNums[1])
+	self._adjacents[2]:setAdjacentByNum(self, self._adjacentAccessNums[2])
+end
+
 function Corridor.iterateAdjacents(self: Corridor)
 	return ipairs(self._adjacents)
 end
