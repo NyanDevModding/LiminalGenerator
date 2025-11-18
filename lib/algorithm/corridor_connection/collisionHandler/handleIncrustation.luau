@@ -1,3 +1,4 @@
+local AccessConnectStack = require(script.Parent.Parent.Parent.Parent.gen_data.AccessConnectStack)
 local Directions = require(script.Parent.Parent.Parent.Parent.gen_data.Directions)
 local Corridor = require(script.Parent.Parent.Parent.Parent.gen_elements.corridor.Corridor)
 
@@ -101,6 +102,7 @@ local function handleIncrustation(
 	roomStorage: RoomStorage.RoomStorage,
 	corridorGrid: FlagGrid.FlagGrid,
 	corridorStorage: CorridorStorage.CorridorStorage,
+	accessConnectStack: AccessConnectStack.AccessConnectStack,
 	debugMode: boolean
 )
 	local collision = corridor:getFirstCollision(corridorGrid)
@@ -240,6 +242,12 @@ local function handleIncrustation(
 		-- Place the room
 		roomStorage:addRoom(room)
 		roomGrid:set(collision.X, collision.Y, collision.Z)
+
+		local accessGrid = accessConnectStack:getGrid()
+		for _, access in room:iterateAccessDatas() do
+			local entrancePos = room:getPos() + access:getRelativeEntrancePos()
+			accessGrid:set(entrancePos.X, entrancePos.Y, entrancePos.Z)
+		end
 
 		-- Bind the rooms
 		if previousRoom ~= nil then
@@ -513,6 +521,7 @@ local function handleIncrustation(
 			roomStorage,
 			corridorGrid,
 			corridorStorage,
+			accessConnectStack,
 			debugMode
 		)
 	end

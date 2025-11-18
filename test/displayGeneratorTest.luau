@@ -10,7 +10,7 @@ local Corridor = require(script.Parent.Parent.LiminalGenerator.gen_elements.corr
 
 return function(
 	worldPos: Vector3,
-	cellSize: Vector3,
+	cellSize: number,
 	size: Vector3,
 	seed,
 	genSettings,
@@ -71,23 +71,14 @@ return function(
 					accessConnectStack:getGrid(),
 					worldPos + Vector3.new(0, 0.5, 0),
 					cellSize,
-					0.5,
+					0,
 					Color3.fromRGB(253, 136, 27)
 				)
-				-- for _, access in accessConnectStack:iterate() do
-				-- 	-- create the part
-				-- 	local part = DisplayUtils.createGridPart(cellSize)
-				-- 	part.Name = tostring(access.x) .. "_" .. tostring(access.y)
-				-- 	local direction = access.direction
-				-- 	part.Position = worldPos
-				-- 		+ Vector3.new(
-				-- 			(access.x + direction.X) * cellSize,
-				-- 			0,
-				-- 			(-access.z - direction.Z) * cellSize
-				-- 		)
-				-- 	part.Parent = accessFolder
-				-- 	part.Color = Color3.new(0.921569, 0.67451, 0)
-				-- end
+
+				for _, part: Part in ipairs(accessFolder:GetChildren()) do
+					part.Size = Vector3.new(cellSize / 3, cellSize / 3, cellSize / 3)
+				end
+
 				accessFolder.Name = "access_grid"
 				accessFolder.Parent = generatorFolder
 			end

@@ -117,7 +117,8 @@ return function(
 			roomGrid,
 			roomStorage,
 			corridorGrid,
-			corridorStorage
+			corridorStorage,
+			accessConnectStack
 		)
 	then
 		if debugMode then
