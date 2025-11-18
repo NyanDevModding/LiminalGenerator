@@ -2,6 +2,8 @@ local Directions = require(script.Parent.Parent.LiminalGenerator.gen_data.Direct
 local FlagGrid = require(script.Parent.Parent.LiminalGenerator.gen_data.FlagGrid)
 local CorridorStorage =
 	require(script.Parent.Parent.LiminalGenerator.gen_data.storage.CorridorStorage)
+local IRoomStorable = require(script.Parent.Parent.LiminalGenerator.gen_data.storage.IRoomStorable)
+local RoomStorage = require(script.Parent.Parent.LiminalGenerator.gen_data.storage.RoomStorage)
 
 local Corridor = require(script.Parent.Parent.LiminalGenerator.gen_elements.corridor.Corridor)
 local AccessData = require(script.Parent.Parent.LiminalGenerator.gen_setting.access.AccessData)
@@ -138,11 +140,7 @@ function DisplayUtils.createSelective2dGrid(
 	return folder
 end
 
-function DisplayUtils.createCorridorPart(
-	firstPos: Vector3,
-	secondPos: Vector3,
-	segmentSize: number?
-)
+function DisplayUtils.createLinePart(firstPos: Vector3, secondPos: Vector3, segmentSize: number?)
 	local part = Instance.new("Part")
 	part.Anchored = true
 	part.Size = Vector3.new(segmentSize or 1, segmentSize or 1, (secondPos - firstPos).Magnitude)
@@ -188,7 +186,7 @@ function DisplayUtils.plotCorridor(
 		local secondWorldPos = worldPos + (nextVertex * cellSize)
 		secondWorldPos = Vector3.new(secondWorldPos.X, worldPos.Y, -secondWorldPos.Z)
 
-		local linkPart = DisplayUtils.createCorridorPart(firstWorldPos, secondWorldPos, segmentSize)
+		local linkPart = DisplayUtils.createLinePart(firstWorldPos, secondWorldPos, segmentSize)
 		linkPart.Position = Vector3.new(linkPart.Position.X, worldPos.Y + 1, linkPart.Position.Z)
 		linkPart.Name = "lk_" .. tostring(i)
 		linkPart.Material = Enum.Material.Neon
@@ -234,6 +232,99 @@ function DisplayUtils.plotCorridorStorage(
 	end
 
 	return corridorGridFolder
+end
+
+function DisplayUtils.plotAdjacents(
+	worldPos: Vector3,
+	cellSize: number,
+	roomStorage: RoomStorage.RoomStorage?,
+	corridorStorage: CorridorStorage.CorridorStorage?,
+	adjacentColor: Color3?,
+	transparency: number?
+)
+	local adjacentFolder = Instance.new("Folder")
+	adjacentColor = adjacentColor or Color3.fromRGB(92, 92, 92)
+	transparency = transparency or 0.5
+
+	if roomStorage ~= nil then
+		for i, room in roomStorage:iterateRoom() do
+			local roomAdjacentFolder = Instance.new("Folder")
+			roomAdjacentFolder.Name = "room_#" .. tostring(i)
+			roomAdjacentFolder.Parent = adjacentFolder
+
+			for accessNum: number, adjacent: IRoomStorable.IRoomStorable in room:iterateAdjacents() do
+				local firstPos = worldPos
+					+ Vector3.new(0.5, 0.5, 0.5)
+					+ (room:getPos() + room:getAccessData(accessNum):getRelativePosition())
+						* cellSize
+				local secondPos = worldPos
+					+ Vector3.new(0.5, 0.5, 0.5)
+					+ adjacent:getPos() * cellSize
+
+				local link = DisplayUtils.createLinePart(firstPos, secondPos)
+				link.Position = Vector3.new(link.Position.X, worldPos.Y + 2, -link.Position.Z)
+				link.Name = "adjacent_link_#" .. tostring(accessNum)
+				link.Anchored = true
+				link.CanCollide = false
+				link.Parent = roomAdjacentFolder
+				link.Color = adjacentColor
+				link.Transparency = transparency
+
+				local base = Instance.new("Part")
+				base.Name = "adjacent_base_#" .. tostring(accessNum)
+				base.Size = Vector3.new(2, 2, 2)
+				base.Anchored = true
+				base.CanCollide = false
+				base.Color = adjacentColor
+				base.Position = Vector3.new(firstPos.X, worldPos.Y + 2, -firstPos.Z)
+				base.Transparency = transparency
+				base.Material = Enum.Material.Neon
+				base.Parent = roomAdjacentFolder
+			end
+		end
+	end
+
+	if corridorStorage ~= nil then
+		for i, corridor in corridorStorage:iterateCorridor() do
+			local corridorAdjacentFolder = Instance.new("Folder")
+			corridorAdjacentFolder.Name = "corridor_#" .. tostring(i)
+			corridorAdjacentFolder.Parent = adjacentFolder
+
+			for accessNum: number, adjacent: IRoomStorable.IRoomStorable in
+				corridor:iterateAdjacents()
+			do
+				local firstPos = worldPos
+					+ (
+							corridor:getPos()
+							+ corridor:getAccessData(accessNum):getRelativePosition()
+						)
+						* cellSize
+				local secondPos = worldPos + (adjacent:getPos() * cellSize)
+
+				local link = DisplayUtils.createLinePart(firstPos, secondPos)
+				link.Position = Vector3.new(link.Position.X, worldPos.Y + 2, -link.Position.Z)
+				link.Name = "adjacent_link_#" .. tostring(accessNum)
+				link.Anchored = true
+				link.CanCollide = false
+				link.Parent = corridorAdjacentFolder
+				link.Color = adjacentColor
+				link.Transparency = transparency
+
+				local base = Instance.new("Part")
+				base.Name = "adjacent_base_#" .. tostring(accessNum)
+				base.Size = Vector3.new(2, 2, 2)
+				base.Anchored = true
+				base.CanCollide = false
+				base.Color = adjacentColor
+				base.Position = Vector3.new(firstPos.X, worldPos.Y + 2, -firstPos.Z)
+				base.Transparency = transparency
+				base.Material = Enum.Material.Neon
+				base.Parent = corridorAdjacentFolder
+			end
+		end
+	end
+
+	return adjacentFolder
 end
 
 DisplayUtils.TEST_ACCESS_1 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.EAST)
