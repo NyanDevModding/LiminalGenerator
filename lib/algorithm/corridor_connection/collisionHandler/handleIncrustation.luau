@@ -91,7 +91,8 @@ local function getDirectionNum(direction: Vector3)
 	return nil
 end
 
-return function(
+--TODO debug adjacents system
+local function handleIncrustation(
 	corridor: Corridor.Corridor,
 	genSettings: Settings.gen_settings,
 	roomDataSet: RoomDataSet.RoomDataSet,
@@ -112,7 +113,6 @@ return function(
 		i += 1
 		local collisionCorridor = corridorStorage:getCorridorAt(collision)
 
-		--TODO debug and finish ts
 		local isNorth = false
 		local isWest = false
 		local isSouth = false
@@ -245,13 +245,13 @@ return function(
 		if previousRoom ~= nil then
 			local roomToPreviousRelativePos = previousCollision - room:getPos()
 
-			room:setAdjacent(
+			room:setAdjacentByNum(
 				previousRoom,
 				room:getRoomData():getAccessNum(roomToPreviousRelativePos)
 			)
 
 			-- Set adjacent at the access of direction: previousCollisionDirection
-			previousRoom:setAdjacent(
+			previousRoom:setAdjacentByNum(
 				room,
 				previousRoom:getRoomData():getAccessNum(-roomToPreviousRelativePos)
 			)
@@ -273,21 +273,18 @@ return function(
 
 		--FIXME ERROR WHEN COLLISION CORRIDOR ISNT IN THE SAME SENS AS CORRIDOR
 
-		local newCollisionCorridor
+		local newCollisionCorridor1, newCollisionCorridor2
 		-- The CollisionCorridor, unlike the corridor, divides when it doesn't
 		-- merge with the corridor.
 		-- The Corridor divides when it is not the first time iterating
 		-- through this loop.
-		print(isOtherVertex)
-		print(otherFirstCollisionNum)
-		print(collisionCorridor:getVertexAmount())
 		if
 			previousCollision == nil
 			or (
 				not isOtherVertex
 				or (
 					otherFirstCollisionNum ~= collisionCorridor:getVertexAmount()
-					and otherFirstCollisionNum ~= 1
+					and otherFirstCollisionNum ~= 1 -- if the collision appared in the middle of the corridor
 				)
 			)
 		then
@@ -296,112 +293,231 @@ return function(
 			-- divide the collision corridor
 
 			-- Divide the collisionCorridor
-			newCollisionCorridor = collisionCorridor:divide(
+			newCollisionCorridor1, newCollisionCorridor2 = collisionCorridor:divide(
 				accesses[getDirectionNum(otherDirection1)],
 				accesses[getDirectionNum(otherDirection2)]
 			)
 
 			-- Set the adjacents as the half are both placed
 			room:setAdjacent(
-				collisionCorridor,
+				newCollisionCorridor1,
 				room:getRoomData():getAccessNum(
-					collisionCorridor:getVertex(collisionCorridor:getVertexAmount()) - collision
+					collisionCorridor:getVertex(newCollisionCorridor1:getVertexAmount()) - collision
 				)
 			)
 			room:setAdjacent(
-				newCollisionCorridor,
-				room:getRoomData():getAccessNum(newCollisionCorridor:getVertex(1) - collision)
+				newCollisionCorridor2,
+				room:getRoomData():getAccessNum(newCollisionCorridor2:getVertex(1) - collision)
 			)
 
+			-- Remove the old corridor
+			collisionCorridor:removeFromGrid(corridorGrid)
+			corridorStorage:removeCorridor(collisionCorridor)
+
 			-- Place the divided collision corridor
-			newCollisionCorridor:addOnGrid(corridorGrid)
-			corridorStorage:addCorridor(newCollisionCorridor)
+			newCollisionCorridor1:addOnGrid(corridorGrid)
+			corridorStorage:addCorridor(newCollisionCorridor1)
+
+			newCollisionCorridor2:addOnGrid(corridorGrid)
+			corridorStorage:addCorridor(newCollisionCorridor2)
 		else
 			-- If the actual collision was just next to the previous one and
 			-- the corridor is the same as the previous one, just move the
 			-- vertex and change the adjacent.
 			--  -> otherDirection1 or otherDirection2 because we know that one
 			-- of them is nil and the other isn't
-			local accessData = accesses[getDirectionNum(otherDirection1 or otherDirection2)].access
+			local roomIsAtCorridorBeginning = collisionCorridor:getVertex(1) == collision
 
-			collisionCorridor:setAdjacent(room, 1, accessData)
-			collisionCorridor:setVertex(
-				-- either the last or first vertex
-				otherFirstCollisionNum,
-				room:getPos() + accessData:getRelativeEntrancePos()
-			)
+			collisionCorridor:removeFromGrid(corridorGrid)
+			corridorStorage:removeCorridor(collisionCorridor)
 
-			local nextVertexNum = otherFirstCollisionNum
-				+ if otherFirstCollisionNum == 1 then 1 else -1
-
-			-- Check that it didn't move the vertex at the same pos as the next vertex
-			if
-				collisionCorridor:getVertex(otherFirstCollisionNum)
-				== collisionCorridor:getVertex(nextVertexNum)
-			then
-				print(nextVertexNum)
-				collisionCorridor:removeVertex(nextVertexNum)
+			-- Find the room at the other extremity of the collisionCorridor
+			local otherRoom
+			for _, adjacent in collisionCorridor:iterateAdjacents() do
+				if adjacent ~= previousRoom then
+					otherRoom = adjacent
+				end
 			end
+
+			if otherRoom == nil then
+				error(
+					"Error in the handleIncrustation while getting the room at the "
+						.. "beginning of the collision corridor, expected it not to be nil"
+				)
+			end
+
+			-- Check if the vertex that is going back do not intersect with its
+			-- previous or next vertex
+			local hasDuplicatedVertices
+
+			if roomIsAtCorridorBeginning then
+				hasDuplicatedVertices = (
+					collisionCorridor:getVertex(1) - collisionCorridor:getVertex(2)
+				).Magnitude == 1
+			else
+				hasDuplicatedVertices = (collisionCorridor:getVertex(
+					collisionCorridor:getVertexAmount()
+				) - collisionCorridor:getVertex(collisionCorridor:getVertexAmount() - 1)).Magnitude == 1
+			end
+
+			local accessNum
+
+			if roomIsAtCorridorBeginning then
+				accessNum = room:getAccessNum(otherDirection2)
+
+				newCollisionCorridor1 = Corridor.newFromRooms(
+					room,
+					accessNum,
+					otherRoom,
+					otherRoom:getAccessNum(
+						collisionCorridor:getVertex(collisionCorridor:getVertexAmount())
+							- otherRoom:getPos()
+					)
+				)
+
+				-- Fill the rest of the new corridor
+				collisionCorridor:copyToCorridor(
+					newCollisionCorridor1,
+					1 + (if hasDuplicatedVertices then 2 else 1),
+					collisionCorridor:getVertexAmount() - 1,
+					if hasDuplicatedVertices then -1 else 0
+				)
+			else
+				accessNum = room:getAccessNum(otherDirection1)
+
+				newCollisionCorridor1 = Corridor.newFromRooms(
+					otherRoom,
+					otherRoom:getAccessNum(collisionCorridor:getVertex(1) - otherRoom:getPos()),
+					room,
+					accessNum
+				)
+
+				-- Fill the rest of the new corridor
+				collisionCorridor:copyToCorridor(
+					newCollisionCorridor1,
+					2,
+					collisionCorridor:getVertexAmount() - (if hasDuplicatedVertices then 2 else 1)
+				)
+			end
+
+			-- Place the shrinked collision corridor
+			newCollisionCorridor1:addOnGrid(corridorGrid)
+			corridorStorage:addCorridor(newCollisionCorridor1)
+
+			-- Set the adjacent of the new room
+			room:setAdjacentByNum(newCollisionCorridor1, accessNum)
 		end
 
+		collisionCorridor = newCollisionCorridor1
 		if debugMode then
-			coroutine.yield(3, corridorStorage, collisionCorridor, newCollisionCorridor)
+			coroutine.yield(3, corridorStorage, collisionCorridor, newCollisionCorridor2)
 		end
 
 		-- Check if it is the first iteration as if it is not, this means that
 		-- the first vertex of the corridor is itself in a collision, thus
 		-- needing a particular treatment.
-		local newCorridor
-		local accessData = accesses[getDirectionNum(corridorDirection2)].access
+		local newCorridor1
 		if previousCollision == nil then
+			local newCorridor2
+
+			local firstAccess: Access.Access = accesses[getDirectionNum(corridorDirection1)]
+			local secondAccess = accesses[getDirectionNum(corridorDirection2)]
+
 			-- Divide the corridors
-			newCorridor = corridor:divide(
-				accesses[getDirectionNum(corridorDirection1)],
-				accesses[getDirectionNum(corridorDirection2)]
+			newCorridor1, newCorridor2 = corridor:divide(firstAccess, secondAccess)
+
+			-- Add the new corridor that has no collision
+			newCorridor1:addOnGrid(corridorGrid)
+			corridorStorage:addCorridor(newCorridor1)
+
+			local firstRoom = newCorridor1:getAdjacent(1)
+
+			-- Set the first new corridor as adjacent as it is placed
+			firstRoom:setAdjacentByNum(
+				newCorridor1,
+				firstRoom:getAccessNum(newCorridor1:getVertex(1) - firstRoom:getPos())
 			)
 
-			-- Set the corridor as adjacent as it is placed
-			room:setAdjacent(
-				corridor,
-				room:getRoomData()
-					:getAccessNum(corridor:getVertex(corridor:getVertexAmount()) - collision)
+			room:setAdjacentByNum(
+				newCorridor1,
+				room:getRoomData():getAccessNum(
+					newCorridor1:getVertex(newCorridor1:getVertexAmount()) - room:getPos()
+				)
 			)
 
-			-- Place the divided corridor, the half that has no collision
-			corridor:setAdjacent(room, 1, accessData)
-			corridor:addOnGrid(corridorGrid)
-			corridorStorage:addCorridor(corridor)
+			corridor = newCorridor1
+			newCorridor1 = newCorridor2
 		else
 			-- If the actual collision was just next to the previous one, just
 			-- move the vertex and change the adjacent.
-
-			corridor:setAdjacent(room, 1, accessData)
-			corridor:setVertex(1, room:getPos() + accessData:getRelativeEntrancePos())
-
-			-- Check that it didn't move the vertex at the same pos as the next vertex
-			if corridor:getVertex(1) == corridor:getVertex(2) then
-				corridor:removeVertex(2)
+			-- Find the room at the other extremity of the corridor
+			local otherRoom
+			for corridorAccessNum, adjacent in corridor:iterateAdjacents() do
+				if corridorAccessNum == 2 then
+					otherRoom = adjacent
+				end
 			end
+
+			if otherRoom == nil then
+				error(
+					"Error in the handleIncrustation while getting the room at the "
+						.. "beginning of the corridor, expected it not to be nil"
+				)
+			end
+
+			-- Check if the vertex that is going back do not intersect with its
+			-- previous or next vertex
+			local hasDuplicatedVertices
+			hasDuplicatedVertices = (corridor:getVertex(1) - corridor:getVertex(2)).Magnitude == 1
+
+			newCorridor1 = Corridor.newFromRooms(
+				room,
+				room:getAccessNum(corridor:getVertexEndingDirection(1)),
+				otherRoom,
+				otherRoom:getAccessNum(
+					corridor:getVertex(corridor:getVertexAmount()) - otherRoom:getPos()
+				)
+			)
+
+			-- Fill the rest of the new corridor
+			corridor:copyToCorridor(
+				newCorridor1,
+				1 + (if hasDuplicatedVertices then 2 else 1),
+				corridor:getVertexAmount() - 1,
+				if hasDuplicatedVertices then -1 else 0
+			)
+
+			corridor = newCorridor1
 		end
 
 		if debugMode then
-			coroutine.yield(4, corridorStorage, corridor, newCorridor)
+			coroutine.yield(4, corridorStorage, corridor, newCorridor1)
 		end
 
 		previousRoom = room
 
-		corridor = newCorridor or corridor
+		corridor = newCorridor1 or corridor
 
 		-- Recalculate next collision
 		previousCollision = collision
 		collision = corridor:getFirstCollision(corridorGrid)
 	until collision == nil or (collision - previousCollision).Magnitude ~= 1
 
-	-- Set the last half as adjacent
-	previousRoom:setAdjacent(
-		corridor,
-		previousRoom:getRoomData():getAccessNum(corridor:getVertex(1) - previousCollision)
-	)
+	if collision ~= nil then
+		handleIncrustation(
+			corridor,
+			genSettings,
+			roomDataSet,
+			seededRandom,
+			roomGrid,
+			roomStorage,
+			corridorGrid,
+			corridorStorage,
+			debugMode
+		)
+	end
+
+	corridor:connectToAdjacents()
 
 	-- Place the last half corridor
 	corridor:addOnGrid(corridorGrid)
@@ -409,3 +525,5 @@ return function(
 
 	return true
 end
+
+return handleIncrustation
