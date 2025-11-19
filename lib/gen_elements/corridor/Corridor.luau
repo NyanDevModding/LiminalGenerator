@@ -881,14 +881,6 @@ function Corridor.roomify(
 
 	local selection = roomDataSet:startRoomSelection():selectTile():selectMaxSize(0, 0, 0)
 
-	if isNorth and isWest and isSouth and isEast then
-		selection:select(function(roomData): boolean
-			return roomData:getAccessNumber() == 4
-		end)
-
-		return selection
-	end
-
 	-- Select with the access pos
 	local accessPositions = {}
 
@@ -908,43 +900,43 @@ function Corridor.roomify(
 		table.insert(accessPositions, Directions.EAST)
 	end
 
-	local accessAmount = (if isNorth then 1 else 0)
-		+ (if isWest then 1 else 0)
-		+ (if isSouth then 1 else 0)
-		+ (if isEast then 1 else 0)
-
-	selection:selectMaxSize(0, 0, 0):select(function(roomData): boolean
-		if roomData:getAccessNumber() ~= accessAmount then
+	selection:select(function(roomData)
+		if roomData:getAccessNumber() ~= 2 then
 			return false
 		end
 
-		for _, accessPos in ipairs(accessPositions) do
-			local ok = false
-			for _, accessData in roomData:iterateAccessDatas() do
-				if accessData:getRelativeEntrancePos() == accessPos then
-					ok = true
-					break
-				end
+		for _, accessData in roomData:iterateAccessDatas() do
+			if accessData:getDirection() == -firstDirection then
+				return true
 			end
 
-			if not ok then
-				return false
+			if accessData:getDirection() == -secondDirection then
+				return true
 			end
 		end
 
-		return true
+		return false
 	end)
 
 	local roomData = selection:getRandomRoom(seededRandom)
-	local room = Room.new(self:getVertex(1), selection:getRandomRoom(seededRandom))
+
+	if roomData == nil then
+		error(
+			(
+				"Got a nil roomData while searching for a tile that "
+				.. "has the directions: {%s} and {%s} and the size: "
+				.. "{0, 0, 0}"
+			):format(tostring(firstDirection), tostring(secondDirection))
+		)
+	end
+
+	local room = Room.new(self:getVertex(1), roomData)
 
 	for accessNum, accessData in roomData:iterateAccessDatas() do
 		if accessData:getDirection() == firstDirection then
 			room:setAdjacent(self._adjacents[1], accessData)
 		elseif accessData:getDirection() == secondDirection then
 			room:setAdjacent(self._adjacents[2], accessData)
-		else
-			error("pluh")
 		end
 	end
 
