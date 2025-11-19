@@ -33,6 +33,23 @@ local function swapCorridors(
 	local otherFirstAccess = collisionCorridor:createAdjacentAccess(1)
 	local otherSecondAccess = collisionCorridor:createAdjacentAccess(2)
 
+	-- Check that the access aren't too close to each other
+	if
+		((firstAccess.x - otherSecondAccess.x) ^ 2 + (firstAccess.y - otherSecondAccess.y) ^ 2 + (firstAccess.z - otherSecondAccess.z) ^ 2)
+			^ 0.5
+		<= 2
+	then
+		return nil, nil
+	end
+
+	if
+		((secondAccess.x - otherFirstAccess.x) ^ 2 + (secondAccess.y - otherFirstAccess.y) ^ 2 + (secondAccess.z - otherFirstAccess.z) ^ 2)
+			^ 0.5
+		<= 2
+	then
+		return nil, nil
+	end
+
 	local newFirstCorridor =
 		pathfinder(gridWrapper, firstAccess, otherSecondAccess, DEFAULT_BFS_DIRECTIONS)
 
