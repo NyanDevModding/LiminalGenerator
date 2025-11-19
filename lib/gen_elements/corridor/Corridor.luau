@@ -26,6 +26,18 @@ function Corridor.new(firstAccess: Access.Access, secondAccess: Access.Access)
 		secondAccess.z + secondAccess.direction.Z
 	)
 
+	if p1 == p2 then
+		error(
+			(
+				"Error while creating a corridor: single-cell "
+				.. "corridor is illegal and may lead to bugs. Please "
+				.. "consider checking that both the accesses aren't "
+				.. "at the same position and place a room instead. "
+				.. "Got the position: {%s}"
+			):format(tostring(p1))
+		)
+	end
+
 	if p1.Y ~= p2.Y then
 		warn(
 			"WARNING: You are using different Y coordinates for "
@@ -67,6 +79,18 @@ function Corridor.newFromRooms(
 
 	local p1 = room1:getPos() + accessData1:getRelativeEntrancePos()
 	local p2 = room2:getPos() + accessData2:getRelativeEntrancePos()
+
+	if p1 == p2 then
+		error(
+			(
+				"Error while creating a corridor from two rooms: single-cell "
+				.. "corridor is illegal and may lead to bugs. Please "
+				.. "consider checking that both the accesses aren't "
+				.. "at the same position and place a room instead. "
+				.. "Got the position: {%s}"
+			):format(tostring(p1))
+		)
+	end
 
 	if p1.Y ~= p2.Y then
 		warn(
