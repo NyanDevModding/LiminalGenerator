@@ -306,18 +306,6 @@ local function handleIncrustation(
 				accesses[getDirectionNum(otherDirection2)]
 			)
 
-			-- Set the adjacents as the half are both placed
-			room:setAdjacent(
-				newCollisionCorridor1,
-				room:getRoomData():getAccessNum(
-					collisionCorridor:getVertex(newCollisionCorridor1:getVertexAmount()) - collision
-				)
-			)
-			room:setAdjacent(
-				newCollisionCorridor2,
-				room:getRoomData():getAccessNum(newCollisionCorridor2:getVertex(1) - collision)
-			)
-
 			-- Remove the old corridor
 			collisionCorridor:removeFromGrid(corridorGrid)
 			corridorStorage:removeCorridor(collisionCorridor)
@@ -328,6 +316,10 @@ local function handleIncrustation(
 
 			newCollisionCorridor2:addOnGrid(corridorGrid)
 			corridorStorage:addCorridor(newCollisionCorridor2)
+
+			-- Set the adjacents as the halves are both placed
+			newCollisionCorridor1:connectToAdjacents()
+			newCollisionCorridor2:connectToAdjacents()
 		else
 			-- If the actual collision was just next to the previous one and
 			-- the corridor is the same as the previous one, just move the
