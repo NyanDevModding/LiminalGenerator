@@ -29,6 +29,7 @@ local PRESETS_NAME = {
 	"multiple_collision_fuse",
 	"mixed_collision", -- fused and not fused
 	"vertex_collision", -- corridor making turns but still collides
+	"single-cell corridors",
 }
 local PRESETS_NUM = {}
 
@@ -177,15 +178,11 @@ Iris:Connect(function()
 			end
 
 			task.defer(function()
-				displayGeneratorTest(
-					worldPos.value,
-					cellSize.value,
-					worldSize.value,
-					seed.value,
-					{ [Settings.DEAD_END_LUCK] = 512, [Settings.ROOM_AMOUNT] = roomAmount.value },
-					TEST_ROOM_DATA_SET_JSONS[roomDataSetName.value],
-					delta.value
-				)
+				displayGeneratorTest(worldPos.value, cellSize.value, worldSize.value, seed.value, {
+					[Settings.DEAD_END_LUCK] = 512,
+					[Settings.ROOM_AMOUNT] = roomAmount.value,
+					[Settings.ACCESS_SEARCH_DEPTH] = 3,
+				}, TEST_ROOM_DATA_SET_JSONS[roomDataSetName.value], delta.value)
 			end)
 		end
 	end

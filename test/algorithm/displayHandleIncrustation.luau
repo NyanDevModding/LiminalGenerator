@@ -274,7 +274,7 @@ return function(
 		testRoom1:setAdjacentByNum(corridor, 1)
 		testRoom2:setAdjacentByNum(corridor, 1)
 	elseif presetNum == 7 then
-		-- vertex_collision
+		-- mixed_collision
 		local testRoom3 = Room.new(Vector3.new(1, 1, 4), roomData3)
 		local testRoom4 = Room.new(Vector3.new(10, 1, 5), roomData4)
 		roomGrid:set(1, 1, 4)
@@ -282,44 +282,85 @@ return function(
 		roomStorage:addRoom(testRoom3)
 		roomStorage:addRoom(testRoom4)
 
-		local collisionCorridor1 = Corridor.newFromRooms(testRoom4, 1, testRoom3, 1)
+		local testRoom5 = Room.new(Vector3.new(1, 1, 7), roomData3)
+		local testRoom6 = Room.new(Vector3.new(10, 1, 6), roomData4)
+		roomGrid:set(1, 1, 7)
+		roomGrid:set(10, 1, 6)
+		roomStorage:addRoom(testRoom5)
+		roomStorage:addRoom(testRoom6)
+
+		local collisionCorridor1 = Corridor.newFromRooms(testRoom3, 1, testRoom4, 1)
 		collisionCorridor1:addVertex(2)
-		collisionCorridor1:setVertex(2, Vector3.new(8, 1, 5))
+		collisionCorridor1:setVertex(2, Vector3.new(5, 1, 4))
 		collisionCorridor1:addVertex(3)
-		collisionCorridor1:setVertex(3, Vector3.new(8, 1, 6))
-		collisionCorridor1:addVertex(4)
-		collisionCorridor1:setVertex(4, Vector3.new(5, 1, 6))
-		collisionCorridor1:addVertex(5)
-		collisionCorridor1:setVertex(5, Vector3.new(5, 1, 5))
-		collisionCorridor1:addVertex(6)
-		collisionCorridor1:setVertex(6, Vector3.new(7, 1, 5))
-		collisionCorridor1:addVertex(7)
-		collisionCorridor1:setVertex(7, Vector3.new(7, 1, 4))
-		collisionCorridor1:addVertex(8)
-		collisionCorridor1:setVertex(8, Vector3.new(5, 1, 4))
+		collisionCorridor1:setVertex(3, Vector3.new(5, 1, 5))
 		collisionCorridor1:addOnGrid(corridorGrid)
 		corridorStorage:addCorridor(collisionCorridor1)
 
-		testRoom4:setAdjacentByNum(collisionCorridor1, 1)
 		testRoom3:setAdjacentByNum(collisionCorridor1, 1)
+		testRoom4:setAdjacentByNum(collisionCorridor1, 1)
+
+		local collisionCorridor2 = Corridor.newFromRooms(testRoom5, 1, testRoom6, 1)
+		collisionCorridor2:addVertex(2)
+		collisionCorridor2:setVertex(2, Vector3.new(5, 1, 7))
+		collisionCorridor2:addVertex(3)
+		collisionCorridor2:setVertex(3, Vector3.new(5, 1, 6))
+		collisionCorridor2:addOnGrid(corridorGrid)
+		corridorStorage:addCorridor(collisionCorridor2)
+
+		testRoom5:setAdjacentByNum(collisionCorridor2, 1)
+		testRoom6:setAdjacentByNum(collisionCorridor2, 1)
 
 		corridor = Corridor.newFromRooms(testRoom1, 1, testRoom2, 1)
-		corridor:addVertex(2)
-		corridor:setVertex(2, Vector3.new(5, 1, 4))
-		corridor:addVertex(3)
-		corridor:setVertex(3, Vector3.new(7, 1, 4))
-		corridor:addVertex(4)
-		corridor:setVertex(4, Vector3.new(7, 1, 5))
-		corridor:addVertex(5)
-		corridor:setVertex(5, Vector3.new(5, 1, 5))
-		corridor:addVertex(6)
-		corridor:setVertex(6, Vector3.new(5, 1, 6))
-		corridor:addVertex(7)
-		corridor:setVertex(7, Vector3.new(8, 1, 6))
-		corridor:addVertex(8)
-		corridor:setVertex(8, Vector3.new(8, 1, 7))
-		corridor:addVertex(9)
-		corridor:setVertex(9, Vector3.new(5, 1, 7))
+
+		testRoom1:setAdjacentByNum(corridor, 1)
+		testRoom2:setAdjacentByNum(corridor, 1)
+	elseif presetNum == 8 then
+		-- single-cell corridors
+
+		local testRoom3 = Room.new(Vector3.new(1, 1, 3), roomData3)
+		local testRoom4 = Room.new(Vector3.new(7, 1, 3), roomData4)
+		roomGrid:set(1, 1, 3)
+		roomGrid:set(7, 1, 3)
+		roomStorage:addRoom(testRoom3)
+		roomStorage:addRoom(testRoom4)
+
+		local testRoom5 = Room.new(Vector3.new(3, 1, 5), roomData3)
+		local testRoom6 = Room.new(Vector3.new(10, 1, 5), roomData4)
+		roomGrid:set(3, 1, 5)
+		roomGrid:set(10, 1, 5)
+		roomStorage:addRoom(testRoom5)
+		roomStorage:addRoom(testRoom6)
+
+		local testRoom7 = Room.new(Vector3.new(3, 1, 7), roomData3)
+		local testRoom8 = Room.new(Vector3.new(7, 1, 7), roomData4)
+		roomGrid:set(3, 1, 7)
+		roomGrid:set(7, 1, 7)
+		roomStorage:addRoom(testRoom7)
+		roomStorage:addRoom(testRoom8)
+
+		local collisionCorridor1 = Corridor.newFromRooms(testRoom3, 1, testRoom4, 1)
+		collisionCorridor1:addOnGrid(corridorGrid)
+		corridorStorage:addCorridor(collisionCorridor1)
+
+		testRoom3:setAdjacentByNum(collisionCorridor1, 1)
+		testRoom4:setAdjacentByNum(collisionCorridor1, 1)
+
+		local collisionCorridor2 = Corridor.newFromRooms(testRoom5, 1, testRoom6, 1)
+		collisionCorridor2:addOnGrid(corridorGrid)
+		corridorStorage:addCorridor(collisionCorridor2)
+
+		testRoom5:setAdjacentByNum(collisionCorridor2, 1)
+		testRoom6:setAdjacentByNum(collisionCorridor2, 1)
+
+		local collisionCorridor3 = Corridor.newFromRooms(testRoom7, 1, testRoom8, 1)
+		collisionCorridor3:addOnGrid(corridorGrid)
+		corridorStorage:addCorridor(collisionCorridor3)
+
+		testRoom7:setAdjacentByNum(collisionCorridor3, 1)
+		testRoom8:setAdjacentByNum(collisionCorridor3, 1)
+
+		corridor = Corridor.newFromRooms(testRoom1, 1, testRoom2, 1)
 
 		testRoom1:setAdjacentByNum(corridor, 1)
 		testRoom2:setAdjacentByNum(corridor, 1)
@@ -540,6 +581,14 @@ return function(
 				corridorFolder.Name = "corridors"
 				corridorFolder.Parent = folder
 
+				-- Display Rooms
+				roomGridFolder:Destroy()
+
+				roomGridFolder = DisplayUtils.createFlag2DGrid(roomGrid, worldPos, cellSize)
+
+				roomGridFolder.Name = "rooms"
+				roomGridFolder.Parent = folder
+
 				-- Display Adjacents
 				adjacentsFolder:Destroy()
 
@@ -557,35 +606,25 @@ return function(
 					corridor = v2
 				end
 
-				createdCorridorFolder:Destroy()
-				createdCorridorFolder = Instance.new("Folder")
+				-- Check if the corridor got roomified
+				if corridor ~= nil then
+					createdCorridorFolder:Destroy()
+					createdCorridorFolder = Instance.new("Folder")
 
-				DisplayUtils.plotCorridor(
-					worldPos,
-					cellSize,
-					createdCorridorFolder,
-					corridor,
-					2,
-					0.5,
-					0.2,
-					CORRIDOR_COLOR
-				)
+					DisplayUtils.plotCorridor(
+						worldPos,
+						cellSize,
+						createdCorridorFolder,
+						corridor,
+						2,
+						0.5,
+						0.2,
+						CORRIDOR_COLOR
+					)
 
-				-- if halfCorridor2 ~= nil then
-				-- 	DisplayUtils.plotCorridor(
-				-- 		worldPos,
-				-- 		cellSize,
-				-- 		createdCorridorFolder,
-				-- 		halfCorridor2,
-				-- 		2,
-				-- 		0.5,
-				-- 		0.5,
-				-- 		CORRIDOR_COLOR
-				-- 	)
-				-- end
-
-				createdCorridorFolder.Name = "created_corridors"
-				createdCorridorFolder.Parent = folder
+					createdCorridorFolder.Name = "created_corridors"
+					createdCorridorFolder.Parent = folder
+				end
 
 				-- Display CorridorStorage too
 				corridorFolder:Destroy()
@@ -603,6 +642,14 @@ return function(
 
 				corridorFolder.Name = "corridors"
 				corridorFolder.Parent = folder
+
+				-- Display rooms
+				roomGridFolder:Destroy()
+
+				roomGridFolder = DisplayUtils.createFlag2DGrid(roomGrid, worldPos, cellSize)
+
+				roomGridFolder.Name = "rooms"
+				roomGridFolder.Parent = folder
 
 				-- Display Adjacents
 				adjacentsFolder:Destroy()
