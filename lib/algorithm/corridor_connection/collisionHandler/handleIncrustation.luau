@@ -12,6 +12,46 @@ local RoomStorage = require(script.Parent.Parent.Parent.Parent.gen_data.storage.
 local Access = require(script.Parent.Parent.Parent.Parent.gen_elements.access.Access)
 local Room = require(script.Parent.Parent.Parent.Parent.gen_elements.room.Room)
 
+local function roomifyCorridor(
+	corridor: Corridor.Corridor,
+	roomGrid: FlagGrid.FlagGrid,
+	roomStorage: RoomStorage.RoomStorage,
+	accessGrid: FlagGrid.FlagGrid,
+	roomDataSet: RoomDataSet.RoomDataSet,
+	seededRandom: SeededRandom.SeededRandom
+)
+	-- The corridor must be single-cell
+	local roomified = corridor:roomify(roomDataSet, seededRandom)[1]
+
+	for _, adjacent in corridor:iterateAdjacents() do
+		adjacent:setAdjacentByNum(
+			roomified,
+			adjacent:getAccessNum(roomified:getPos() - adjacent:getPos())
+		)
+	end
+
+	local roomifiedPos = roomified:getPos()
+	roomGrid:set(roomifiedPos.X, roomifiedPos.Y, roomifiedPos.Z)
+	roomStorage:addRoom(roomified)
+
+	-- Place the accesses
+	local access1, access2 =
+		roomified:getAccessData(1):getRelativePosition(),
+		roomified:getAccessData(2):getRelativePosition()
+	accessGrid:set(
+		roomifiedPos.X + access1.X,
+		roomifiedPos.Y + access1.Y,
+		roomifiedPos.Z + access1.Z
+	)
+	accessGrid:set(
+		roomifiedPos.X + access2.X,
+		roomifiedPos.Y + access2.Y,
+		roomifiedPos.Z + access2.Z
+	)
+
+	return roomified
+end
+
 local function getIncrustationRoomSelection(
 	isNorth: boolean,
 	isWest: boolean,
@@ -311,21 +351,44 @@ local function handleIncrustation(
 			corridorStorage:removeCorridor(collisionCorridor)
 
 			-- Place the divided collision corridor
-			newCollisionCorridor1:addOnGrid(corridorGrid)
-			corridorStorage:addCorridor(newCollisionCorridor1)
+			if newCollisionCorridor1:isSingleCell() then
+				roomifyCorridor(
+					newCollisionCorridor1,
+					roomGrid,
+					roomStorage,
+					accessGrid,
+					roomDataSet,
+					seededRandom
+				)
+				newCollisionCorridor1 = nil
+			else
+				newCollisionCorridor1:addOnGrid(corridorGrid)
+				corridorStorage:addCorridor(newCollisionCorridor1)
+				newCollisionCorridor1:connectToAdjacents()
+			end
 
-			newCollisionCorridor2:addOnGrid(corridorGrid)
-			corridorStorage:addCorridor(newCollisionCorridor2)
-
-			-- Set the adjacents as the halves are both placed
-			newCollisionCorridor1:connectToAdjacents()
-			newCollisionCorridor2:connectToAdjacents()
+			if newCollisionCorridor2:isSingleCell() then
+				roomifyCorridor(
+					newCollisionCorridor2,
+					roomGrid,
+					roomStorage,
+					accessGrid,
+					roomDataSet,
+					seededRandom
+				)
+				newCollisionCorridor2 = nil
+			else
+				newCollisionCorridor2:addOnGrid(corridorGrid)
+				corridorStorage:addCorridor(newCollisionCorridor2)
+				newCollisionCorridor2:connectToAdjacents()
+			end
 		else
 			-- If the actual collision was just next to the previous one and
 			-- the corridor is the same as the previous one, just move the
 			-- vertex and change the adjacent.
 			--  -> otherDirection1 or otherDirection2 because we know that one
 			-- of them is nil and the other isn't
+
 			local roomIsAtCorridorBeginning = collisionCorridor:getVertex(1) == collision
 
 			collisionCorridor:removeFromGrid(corridorGrid)
@@ -400,9 +463,23 @@ local function handleIncrustation(
 				)
 			end
 
-			-- Place the shrinked collision corridor
-			newCollisionCorridor1:addOnGrid(corridorGrid)
-			corridorStorage:addCorridor(newCollisionCorridor1)
+			-- Handle if it is a single-cell
+			if newCollisionCorridor1:isSingleCell() then
+				roomifyCorridor(
+					newCollisionCorridor1,
+					roomGrid,
+					roomStorage,
+					accessGrid,
+					roomDataSet,
+					seededRandom
+				)
+
+				newCollisionCorridor1 = nil
+			else
+				-- Place the shrinked collision corridor
+				newCollisionCorridor1:addOnGrid(corridorGrid)
+				corridorStorage:addCorridor(newCollisionCorridor1)
+			end
 
 			-- Set the adjacent of the new room
 			room:setAdjacentByNum(newCollisionCorridor1, accessNum)
@@ -427,26 +504,24 @@ local function handleIncrustation(
 			newCorridor1, newCorridor2 = corridor:divide(firstAccess, secondAccess)
 
 			-- Add the new corridor that has no collision
-			newCorridor1:addOnGrid(corridorGrid)
-			corridorStorage:addCorridor(newCorridor1)
-
-			local firstRoom = newCorridor1:getAdjacent(1)
-
-			-- Set the first new corridor as adjacent as it is placed
-			firstRoom:setAdjacentByNum(
-				newCorridor1,
-				firstRoom:getAccessNum(newCorridor1:getVertex(1) - firstRoom:getPos())
-			)
-
-			room:setAdjacentByNum(
-				newCorridor1,
-				room:getRoomData():getAccessNum(
-					newCorridor1:getVertex(newCorridor1:getVertexAmount()) - room:getPos()
+			if newCorridor1:isSingleCell() then
+				roomifyCorridor(
+					newCorridor1,
+					roomGrid,
+					roomStorage,
+					accessGrid,
+					roomDataSet,
+					seededRandom
 				)
-			)
+				newCorridor1 = nil
+			else
+				corridorStorage:addCorridor(newCorridor1)
+				newCorridor1:addOnGrid(corridorGrid)
+				newCorridor1:connectToAdjacents()
+			end
 
-			corridor = newCorridor1
 			newCorridor1 = newCorridor2
+			corridor = newCorridor1
 		else
 			-- If the actual collision was just next to the previous one, just
 			-- move the vertex and change the adjacent.
@@ -487,6 +562,19 @@ local function handleIncrustation(
 				if hasDuplicatedVertices then -1 else 0
 			)
 
+			if newCorridor1:isSingleCell() then
+				roomifyCorridor(
+					newCorridor1,
+					roomGrid,
+					roomStorage,
+					accessGrid,
+					roomDataSet,
+					seededRandom
+				)
+
+				newCorridor1 = nil
+			end
+
 			corridor = newCorridor1
 		end
 
@@ -497,6 +585,10 @@ local function handleIncrustation(
 		previousRoom = room
 
 		corridor = newCorridor1 or corridor
+
+		if corridor == nil then
+			return true
+		end
 
 		-- Recalculate next collision
 		previousCollision = collision

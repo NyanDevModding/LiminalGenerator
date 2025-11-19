@@ -49,7 +49,7 @@ function Generator.generate(
 	local roomStorage = RoomStorage.new()
 	local corridorStorage = CorridorStorage.new()
 
-	local accessRoomGrid = FlagGridsWrapper.new({ roomGrid, accessConnectStack:getGrid() })
+	local accessAndRoomGrid = FlagGridsWrapper.new({ roomGrid, accessConnectStack:getGrid() })
 
 	print(
 		("Generating on a (%i, %i, %i) area\nFrom RoomDataSet: %s"):format(
@@ -94,8 +94,19 @@ function Generator.generate(
 
 		timeout += 1
 
+		if
+			((access1.x - access2.x) ^ 2 + (access1.y - access2.y) ^ 2 + (access1.z - access2.z) ^ 2)
+				^ 0.5
+			<= 2
+		then
+			print("Got the accesses too close to each other")
+			accessConnectStack:repush(access1, seededRandom)
+			accessConnectStack:repush(access2, seededRandom)
+			continue
+		end
+
 		print("pathfinding")
-		local corridor = pathfinder(accessRoomGrid, access1, access2)
+		local corridor = pathfinder(accessAndRoomGrid, access1, access2)
 
 		if corridor == nil then
 			deadEndsStack:push(access1)
