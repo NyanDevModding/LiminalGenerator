@@ -28,8 +28,10 @@ return function(
 	else
 		local generatorCoroutine = coroutine.create(generator.generate)
 
-		local roomGridFolder, corridorGridFolder, accessFolder =
-			Instance.new("Folder"), Instance.new("Folder"), Instance.new("Folder")
+		local roomGridFolder = Instance.new("Folder")
+		local corridorGridFolder = Instance.new("Folder")
+		local accessFolder = Instance.new("Folder")
+		local adjacentsFolder = Instance.new("Folder")
 
 		local corridorColorDict = {}
 
@@ -42,7 +44,7 @@ return function(
 				firstIteration = false
 			end
 
-			local ok, roomGrid: FlagGrid.FlagGrid | RoomStorage.RoomStorage | string, corridorStorage: CorridorStorage.CorridorStorage?, accessConnectStack: AccessConnectStack.AccessConnectStack?, newCorridor: Corridor.Corridor? =
+			local ok, roomGrid: FlagGrid.FlagGrid, roomStorage: RoomStorage.RoomStorage | string, corridorStorage: CorridorStorage.CorridorStorage?, accessConnectStack: AccessConnectStack.AccessConnectStack?, newCorridor: Corridor.Corridor? =
 				coroutine.resume(generatorCoroutine, generator, size.X, size.Y, size.Z, true)
 
 			if coroutine.status(generatorCoroutine) == "dead" then
@@ -125,6 +127,19 @@ return function(
 				DisplayUtils.plotCorridor(worldPos, cellSize, corridorGridFolder, newCorridor)
 
 				folder.Parent = generatorFolder
+			end
+
+			if corridorStorage ~= nil or roomStorage ~= nil then
+				adjacentsFolder:Destroy()
+
+				adjacentsFolder = DisplayUtils.plotAdjacents(
+					worldPos + Vector3.new(0, 2, 0),
+					cellSize,
+					roomStorage,
+					corridorStorage
+				)
+				adjacentsFolder.Name = "adjacents"
+				adjacentsFolder.Parent = workspace
 			end
 		end
 	end

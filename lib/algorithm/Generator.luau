@@ -104,7 +104,7 @@ function Generator.generate(
 		end
 
 		if debugMode then
-			coroutine.yield(roomGrid, corridorStorage, accessConnectStack, corridor)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack, corridor)
 		end
 
 		print("searching collision")
@@ -136,11 +136,11 @@ function Generator.generate(
 			corridor:addOnGrid(corridorGrid)
 			corridorStorage:addCorridor(corridor)
 
-			access1.room:setAdjacent(corridor, access1.access)
+			corridor:connectToAdjacents()
 		end
 
 		if debugMode then
-			coroutine.yield(roomGrid, corridorStorage, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
 		end
 	end
 

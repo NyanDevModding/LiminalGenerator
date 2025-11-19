@@ -100,7 +100,7 @@ return function(
 		)
 	then
 		if debugMode then
-			coroutine.yield(roomGrid, corridorStorage, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
 		end
 
 		return true
@@ -122,7 +122,7 @@ return function(
 		)
 	then
 		if debugMode then
-			coroutine.yield(roomGrid, corridorStorage, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
 		end
 
 		return true
@@ -147,14 +147,14 @@ return function(
 		)
 	then
 		if debugMode then
-			coroutine.yield(roomGrid, corridorStorage, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
 		end
 
 		return true
 	end
 
 	if debugMode then
-		coroutine.yield(roomGrid, corridorStorage, accessConnectStack)
+		coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
 	end
 
 	return false

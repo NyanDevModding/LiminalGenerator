@@ -66,7 +66,7 @@ return function(
 		end
 
 		if debugMode then
-			coroutine.yield(roomGrid, nil, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, nil, accessConnectStack)
 		end
 
 		roomAmount -= 1

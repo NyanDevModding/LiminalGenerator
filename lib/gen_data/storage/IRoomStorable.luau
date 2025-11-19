@@ -19,7 +19,7 @@ export type IRoomStorable = {
 		adjacent: IRoomStorable,
 		newAdjacent: IRoomStorable
 	) -> (),
-	iterateAdjacents: (self: IRoomStorable) -> () -> (number, IRoomStorable),
+	iterateAdjacents: (self: IRoomStorable) -> ({}, number, nil) -> (number, IRoomStorable),
 	isIncludingCell: (self: IRoomStorable, cellPos: Vector3) -> boolean,
 	iterateAccessDatas: (
 		self: IRoomStorable

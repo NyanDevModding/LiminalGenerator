@@ -243,7 +243,6 @@ function DisplayUtils.plotAdjacents(
 	transparency: number?
 )
 	local adjacentFolder = Instance.new("Folder")
-	adjacentColor = adjacentColor or Color3.fromRGB(92, 92, 92)
 	transparency = transparency or 0.5
 
 	if roomStorage ~= nil then
@@ -254,20 +253,40 @@ function DisplayUtils.plotAdjacents(
 
 			for accessNum: number, adjacent: IRoomStorable.IRoomStorable in room:iterateAdjacents() do
 				local firstPos = worldPos
-					+ Vector3.new(0.5, 0.5, 0.5)
 					+ (room:getPos() + room:getAccessData(accessNum):getRelativePosition())
 						* cellSize
-				local secondPos = worldPos
-					+ Vector3.new(0.5, 0.5, 0.5)
-					+ adjacent:getPos() * cellSize
+
+				local secondPos
+				for accessNum: number, adjacentsAdjacent: IRoomStorable.IRoomStorable in
+					adjacent:iterateAdjacents()
+				do
+					if adjacentsAdjacent == room then
+						secondPos = worldPos
+							+ (
+									adjacent:getPos()
+									+ adjacent:getAccessData(accessNum):getRelativePosition()
+								)
+								* cellSize
+						break
+					end
+				end
+
+				if secondPos == nil then
+					secondPos = worldPos + adjacent:getPos() * cellSize
+				end
+
+				local color = adjacentColor
+					or Color3.new(math.random(1, 255), math.random(1, 255), math.random(1, 255))
+				local offset = math.random(0, 50) / 10
 
 				local link = DisplayUtils.createLinePart(firstPos, secondPos)
-				link.Position = Vector3.new(link.Position.X, worldPos.Y + 2, -link.Position.Z)
+				link.Position =
+					Vector3.new(link.Position.X, worldPos.Y + 2 + offset, -link.Position.Z)
 				link.Name = "adjacent_link_#" .. tostring(accessNum)
 				link.Anchored = true
 				link.CanCollide = false
 				link.Parent = roomAdjacentFolder
-				link.Color = adjacentColor
+				link.Color = color
 				link.Transparency = transparency
 
 				local base = Instance.new("Part")
@@ -275,10 +294,9 @@ function DisplayUtils.plotAdjacents(
 				base.Size = Vector3.new(2, 2, 2)
 				base.Anchored = true
 				base.CanCollide = false
-				base.Color = adjacentColor
-				base.Position = Vector3.new(firstPos.X, worldPos.Y + 2, -firstPos.Z)
+				base.Color = color
+				base.Position = Vector3.new(firstPos.X, worldPos.Y + 2 + offset, -firstPos.Z)
 				base.Transparency = transparency
-				base.Material = Enum.Material.Neon
 				base.Parent = roomAdjacentFolder
 			end
 		end
@@ -299,15 +317,38 @@ function DisplayUtils.plotAdjacents(
 							+ corridor:getAccessData(accessNum):getRelativePosition()
 						)
 						* cellSize
-				local secondPos = worldPos + (adjacent:getPos() * cellSize)
+
+				local secondPos
+				for accessNum: number, adjacentsAdjacent: IRoomStorable.IRoomStorable in
+					adjacent:iterateAdjacents()
+				do
+					if adjacentsAdjacent == corridor then
+						secondPos = worldPos
+							+ (
+									adjacent:getPos()
+									+ adjacent:getAccessData(accessNum):getRelativePosition()
+								)
+								* cellSize
+						break
+					end
+				end
+
+				if secondPos == nil then
+					secondPos = worldPos + adjacent:getPos() * cellSize
+				end
+
+				local color = adjacentColor
+					or Color3.new(math.random(1, 255), math.random(1, 255), math.random(1, 255))
+				local offset = math.random(0, 50) / 10
 
 				local link = DisplayUtils.createLinePart(firstPos, secondPos)
-				link.Position = Vector3.new(link.Position.X, worldPos.Y + 2, -link.Position.Z)
+				link.Position =
+					Vector3.new(link.Position.X, worldPos.Y + 2 + offset, -link.Position.Z)
 				link.Name = "adjacent_link_#" .. tostring(accessNum)
 				link.Anchored = true
 				link.CanCollide = false
 				link.Parent = corridorAdjacentFolder
-				link.Color = adjacentColor
+				link.Color = color
 				link.Transparency = transparency
 
 				local base = Instance.new("Part")
@@ -315,10 +356,9 @@ function DisplayUtils.plotAdjacents(
 				base.Size = Vector3.new(2, 2, 2)
 				base.Anchored = true
 				base.CanCollide = false
-				base.Color = adjacentColor
-				base.Position = Vector3.new(firstPos.X, worldPos.Y + 2, -firstPos.Z)
+				base.Color = color
+				base.Position = Vector3.new(firstPos.X, worldPos.Y + 2 + offset, -firstPos.Z)
 				base.Transparency = transparency
-				base.Material = Enum.Material.Neon
 				base.Parent = corridorAdjacentFolder
 			end
 		end
