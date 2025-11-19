@@ -1,3 +1,4 @@
+local SeededRandom = require(script.Parent.Parent.Parent.algorithm.SeededRandom)
 local Directions = require(script.Parent.Parent.Parent.gen_data.Directions)
 local FlagGrid = require(script.Parent.Parent.Parent.gen_data.FlagGrid)
 local IRoomStorable = require(script.Parent.Parent.Parent.gen_data.storage.IRoomStorable)
@@ -5,6 +6,7 @@ local AccessData = require(script.Parent.Parent.Parent.gen_setting.access.Access
 local IAccessData = require(script.Parent.Parent.Parent.gen_setting.access.IAccessData)
 local DeadEndTileRoomData =
 	require(script.Parent.Parent.Parent.gen_setting.corridor_tile.uniform.DeadEndTileRoomData)
+local RoomDataSet = require(script.Parent.Parent.Parent.gen_setting.room_data_set.RoomDataSet)
 local Access = require(script.Parent.Parent.access.Access)
 local Room = require(script.Parent.Parent.room.Room)
 
@@ -25,18 +27,6 @@ function Corridor.new(firstAccess: Access.Access, secondAccess: Access.Access)
 		secondAccess.y + secondAccess.direction.Y,
 		secondAccess.z + secondAccess.direction.Z
 	)
-
-	if p1 == p2 then
-		error(
-			(
-				"Error while creating a corridor: single-cell "
-				.. "corridor is illegal and may lead to bugs. Please "
-				.. "consider checking that both the accesses aren't "
-				.. "at the same position and place a room instead. "
-				.. "Got the position: {%s}"
-			):format(tostring(p1))
-		)
-	end
 
 	if p1.Y ~= p2.Y then
 		warn(
@@ -79,18 +69,6 @@ function Corridor.newFromRooms(
 
 	local p1 = room1:getPos() + accessData1:getRelativeEntrancePos()
 	local p2 = room2:getPos() + accessData2:getRelativeEntrancePos()
-
-	if p1 == p2 then
-		error(
-			(
-				"Error while creating a corridor from two rooms: single-cell "
-				.. "corridor is illegal and may lead to bugs. Please "
-				.. "consider checking that both the accesses aren't "
-				.. "at the same position and place a room instead. "
-				.. "Got the position: {%s}"
-			):format(tostring(p1))
-		)
-	end
 
 	if p1.Y ~= p2.Y then
 		warn(
@@ -142,6 +120,10 @@ function Corridor.getAccessData(self: Corridor, accessNumero: number)
 	end
 
 	return self._secondAccess
+end
+
+function Corridor.isSingleCell(self: Corridor)
+	return self._vertices[1] == self._vertices[2] and self._vertices[3] == nil
 end
 
 -- Used when the Corridor is about to change to create the access to bind
@@ -876,6 +858,97 @@ end
 
 function Corridor.iterateAccessDatas(self: Corridor)
 	return ipairs({ self._firstAccess, self._secondAccess })
+end
+
+--TODO tranform the corridor into a bunch of rooms
+function Corridor.roomify(
+	self: Corridor,
+	roomDataSet: RoomDataSet.RoomDataSet,
+	seededRandom: SeededRandom.SeededRandom
+): { Room.Room }
+	if not self:isSingleCell() then
+		error("Trying to roomify a non single cell corridor but it is not yet made for this.")
+	end
+
+	local firstDirection = self._firstAccess:getDirection()
+	local secondDirection = self._secondAccess:getDirection()
+
+	local isNorth, isWest, isSouth, isEast
+	isNorth = firstDirection == Directions.NORTH or secondDirection == Directions.NORTH
+	isWest = firstDirection == Directions.WEST or secondDirection == Directions.WEST
+	isSouth = firstDirection == Directions.SOUTH or secondDirection == Directions.SOUTH
+	isEast = firstDirection == Directions.EAST or secondDirection == Directions.EAST
+
+	local selection = roomDataSet:startRoomSelection():selectTile():selectMaxSize(0, 0, 0)
+
+	if isNorth and isWest and isSouth and isEast then
+		selection:select(function(roomData): boolean
+			return roomData:getAccessNumber() == 4
+		end)
+
+		return selection
+	end
+
+	-- Select with the access pos
+	local accessPositions = {}
+
+	if isNorth then
+		table.insert(accessPositions, Directions.NORTH)
+	end
+
+	if isWest then
+		table.insert(accessPositions, Directions.WEST)
+	end
+
+	if isSouth then
+		table.insert(accessPositions, Directions.SOUTH)
+	end
+
+	if isEast then
+		table.insert(accessPositions, Directions.EAST)
+	end
+
+	local accessAmount = (if isNorth then 1 else 0)
+		+ (if isWest then 1 else 0)
+		+ (if isSouth then 1 else 0)
+		+ (if isEast then 1 else 0)
+
+	selection:selectMaxSize(0, 0, 0):select(function(roomData): boolean
+		if roomData:getAccessNumber() ~= accessAmount then
+			return false
+		end
+
+		for _, accessPos in ipairs(accessPositions) do
+			local ok = false
+			for _, accessData in roomData:iterateAccessDatas() do
+				if accessData:getRelativeEntrancePos() == accessPos then
+					ok = true
+					break
+				end
+			end
+
+			if not ok then
+				return false
+			end
+		end
+
+		return true
+	end)
+
+	local roomData = selection:getRandomRoom(seededRandom)
+	local room = Room.new(self:getVertex(1), selection:getRandomRoom(seededRandom))
+
+	for accessNum, accessData in roomData:iterateAccessDatas() do
+		if accessData:getDirection() == firstDirection then
+			room:setAdjacent(self._adjacents[1], accessData)
+		elseif accessData:getDirection() == secondDirection then
+			room:setAdjacent(self._adjacents[2], accessData)
+		else
+			error("pluh")
+		end
+	end
+
+	return { room }
 end
 
 -- Check if the corridor has all its segments right like if there is no
