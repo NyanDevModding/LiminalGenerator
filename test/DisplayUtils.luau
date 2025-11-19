@@ -240,10 +240,17 @@ function DisplayUtils.plotAdjacents(
 	roomStorage: RoomStorage.RoomStorage?,
 	corridorStorage: CorridorStorage.CorridorStorage?,
 	adjacentColor: Color3?,
-	transparency: number?
+	transparency: number?,
+	baseSize: number?,
+	linkSize: number?
 )
 	local adjacentFolder = Instance.new("Folder")
 	transparency = transparency or 0.5
+
+	local vecBaseSize = if baseSize == nil
+		then Vector3.new(2, 2, 2)
+		else Vector3.new(baseSize, baseSize, baseSize)
+	linkSize = linkSize or 1
 
 	if roomStorage ~= nil then
 		for i, room in roomStorage:iterateRoom() do
@@ -279,7 +286,7 @@ function DisplayUtils.plotAdjacents(
 					or Color3.new(math.random(1, 255), math.random(1, 255), math.random(1, 255))
 				local offset = math.random(0, 50) / 10
 
-				local link = DisplayUtils.createLinePart(firstPos, secondPos)
+				local link = DisplayUtils.createLinePart(firstPos, secondPos, linkSize)
 				link.Position =
 					Vector3.new(link.Position.X, worldPos.Y + 2 + offset, -link.Position.Z)
 				link.Name = "adjacent_link_#" .. tostring(accessNum)
@@ -291,7 +298,7 @@ function DisplayUtils.plotAdjacents(
 
 				local base = Instance.new("Part")
 				base.Name = "adjacent_base_#" .. tostring(accessNum)
-				base.Size = Vector3.new(2, 2, 2)
+				base.Size = vecBaseSize
 				base.Anchored = true
 				base.CanCollide = false
 				base.Color = color
@@ -341,7 +348,7 @@ function DisplayUtils.plotAdjacents(
 					or Color3.new(math.random(1, 255), math.random(1, 255), math.random(1, 255))
 				local offset = math.random(0, 50) / 10
 
-				local link = DisplayUtils.createLinePart(firstPos, secondPos)
+				local link = DisplayUtils.createLinePart(firstPos, secondPos, linkSize)
 				link.Position =
 					Vector3.new(link.Position.X, worldPos.Y + 2 + offset, -link.Position.Z)
 				link.Name = "adjacent_link_#" .. tostring(accessNum)
@@ -353,7 +360,7 @@ function DisplayUtils.plotAdjacents(
 
 				local base = Instance.new("Part")
 				base.Name = "adjacent_base_#" .. tostring(accessNum)
-				base.Size = Vector3.new(2, 2, 2)
+				base.Size = vecBaseSize
 				base.Anchored = true
 				base.CanCollide = false
 				base.Color = color

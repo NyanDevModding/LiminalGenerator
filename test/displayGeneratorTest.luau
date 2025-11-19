@@ -115,18 +115,18 @@ return function(
 				corridorGridFolder.Parent = generatorFolder
 			end
 
-			local folder = generatorFolder:FindFirstChild("new_corridor")
-			if folder ~= nil then
-				folder:Destroy()
+			local newCorridorFolder = generatorFolder:FindFirstChild("new_corridor")
+			if newCorridorFolder ~= nil then
+				newCorridorFolder:Destroy()
 			end
 
 			if newCorridor ~= nil then
-				folder = Instance.new("Folder")
-				folder.Name = "new_corridor"
+				newCorridorFolder = Instance.new("Folder")
+				newCorridorFolder.Name = "new_corridor"
 
 				DisplayUtils.plotCorridor(worldPos, cellSize, corridorGridFolder, newCorridor)
 
-				folder.Parent = generatorFolder
+				newCorridorFolder.Parent = generatorFolder
 			end
 
 			if corridorStorage ~= nil or roomStorage ~= nil then
@@ -136,10 +136,14 @@ return function(
 					worldPos + Vector3.new(0, 2, 0),
 					cellSize,
 					roomStorage,
-					corridorStorage
+					corridorStorage,
+					nil,
+					nil,
+					0.5,
+					0.2
 				)
 				adjacentsFolder.Name = "adjacents"
-				adjacentsFolder.Parent = workspace
+				adjacentsFolder.Parent = generatorFolder
 			end
 		end
 	end
