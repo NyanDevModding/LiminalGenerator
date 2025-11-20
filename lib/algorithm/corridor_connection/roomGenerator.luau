@@ -28,37 +28,71 @@ return function(
 	local gridSize = Vector3.new(roomGrid:getXSize(), roomGrid:getYSize(), roomGrid:getZSize())
 
 	local selector = roomDataSet:startRoomSelection():selectNonTile()
+	local accessGrid = accessConnectStack:getGrid()
 
 	while roomAmount > 0 and i < TIMEOUT_AMOUNT do
 		local roomData = selector:getRandomRoom(seededRandom)
-		local minPos = Vector3.new(1, 1, 1)
-		local maxPos = gridSize - roomData:getSize() - Vector3.new(2, 0, 2) -- remove that last vector when todo under here is completed
+
+		local relativeMin = Vector3.zero
+		local relativeMax = roomData:getSize()
+
+		-- Extend minPos and maxPos so entrances do not spawn outisde of the grid
+		for _, accessData in roomData:iterateAccessDatas() do
+			local relativeEntrancePos = accessData:getRelativeEntrancePos()
+
+			-- Minimize with entrance
+			relativeMin = Vector3.min(relativeMin, relativeEntrancePos)
+
+			-- Maximize with entrance
+			relativeMax = Vector3.max(relativeMax, relativeEntrancePos)
+		end
+
+		local minPos = Vector3.new(1, 1, 1) - relativeMin
+		local maxPos = gridSize - relativeMax
 
 		local deltaPos = maxPos - minPos
 
+		if deltaPos.X < 0 or deltaPos.Y < 0 or deltaPos.Z < 0 then
+			i += 1
+			continue
+		end
+
 		local p1 = Vector3.new(
-			minPos.X + (seededRandom:random() / 1023) * deltaPos.X,
-			minPos.Y + (seededRandom:random() / 1023) * deltaPos.Y,
-			minPos.Z + (seededRandom:random() / 1023) * deltaPos.Z
-		):Floor()
+			minPos.X + seededRandom:randomInt(0, deltaPos.X),
+			minPos.Y + seededRandom:randomInt(0, deltaPos.Y),
+			minPos.Z + seededRandom:randomInt(0, deltaPos.Z)
+		)
 		local p2 = p1 + roomData:getSize()
 
-		-- TODO stop letting a space of 2 between rooms and actually calculate if it could collide with any access
-		local minP1 = p1 - Vector3.new(2, 2, 2)
-		minP1 = Vector3.new(
-			minP1.X <= 0 and 1 or minP1.X,
-			minP1.Y <= 0 and 1 or minP1.Y,
-			minP1.Z <= 0 and 1 or minP1.Z
-		)
-		local maxP2 = p2 + Vector3.new(2, 2, 2)
-		maxP2 = Vector3.new(
-			maxP2.X > gridSize.X and gridSize.X or maxP2.X,
-			maxP2.Y > gridSize.Y and gridSize.Y or maxP2.Y,
-			maxP2.Z > gridSize.Z and gridSize.Z or maxP2.Z
-		)
-		local canPlace = not roomGrid:volumeOr(minP1.X, minP1.Y, minP1.Z, maxP2.X, maxP2.Y, maxP2.Z)
+		-- Check that there is no room
+		if roomGrid:volumeOr(p1.X, p1.Y, p1.Z, p2.X, p2.Y, p2.Z) then
+			i += 1
+			continue
+		end
 
-		if not canPlace then
+		-- Check that there
+		if accessGrid:volumeOr(p1.X, p1.Y, p1.Z, p2.X, p2.Y, p2.Z) then
+			i += 1
+			continue
+		end
+
+		-- Check for obstrucated entrances
+		local obstrucated = false
+		for _, accessData in roomData:iterateAccessDatas() do
+			local entrancePos = p1 + accessData:getRelativeEntrancePos()
+
+			if roomGrid:get(entrancePos.X, entrancePos.Y, entrancePos.Z) == 1 then
+				obstrucated = true
+				break
+			end
+
+			if accessGrid:get(entrancePos.X, entrancePos.Y, entrancePos.Z) == 1 then
+				obstrucated = true
+				break
+			end
+		end
+
+		if obstrucated then
 			i += 1
 			continue
 		end
@@ -72,16 +106,16 @@ return function(
 		roomStorage:addRoom(room)
 
 		for accessNum, access in roomData:iterateAccessDatas() do
-			local accessPos = room:getPos() + roomData:getAccessRelativePos(accessNum)
+			local accessPos = room:getPos() + access:getRelativePosition()
 			accessConnectStack:push(
 				Access.createAccess(room, access, accessPos.X, accessPos.Y, accessPos.Z)
 			)
 		end
 
+		roomAmount -= 1
+
 		if debugMode then
 			coroutine.yield(roomGrid, roomStorage, nil, accessConnectStack)
 		end
-
-		roomAmount -= 1
 	end
 end
