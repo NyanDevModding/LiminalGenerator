@@ -24,4 +24,10 @@ function SeededRandom.random(self: SeededRandom)
 	return math.random(0, 1023)
 end
 
+function SeededRandom.randomInt(self: SeededRandom, from: number, to: number)
+	math.randomseed(self._seed + self._step)
+	self._step += 1
+	return math.random(from, to)
+end
+
 return SeededRandom
