@@ -106,6 +106,10 @@ return function(
 	end
 
 	print("try incrustation")
+	print("	Quickly check CorridorStorage OK after try regenerate")
+	corridorStorage:debugIsOk(
+		Vector3.new(corridorGrid:getXSize(), corridorGrid:getYSize(), corridorGrid:getZSize())
+	)
 	-- try incrustation
 	if
 		handleIncrustation(

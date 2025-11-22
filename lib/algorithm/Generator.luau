@@ -104,11 +104,32 @@ function Generator.generate(
 		debugMode
 	)
 
+	if debugMode then
+		print("Check Sync after roomGeneration")
+		roomStorage:debugCheckSyncWithGrid(roomGrid)
+		corridorStorage:debugCheckSyncWithGrid(corridorGrid)
+	end
+
 	local MAX_TIMEOUT = 1000
 
 	-- Then connect the corridors
 	local timeout = 0
+	local loopNum = 0
 	while not accessConnectStorage:isToConnectEmpty() and timeout <= MAX_TIMEOUT do
+		loopNum += 1
+
+		if debugMode then
+			print(" - Starting loop #" .. tostring(loopNum))
+
+			print("At the beginning of the loop:")
+			print("	Check Sync")
+			roomStorage:debugCheckSyncWithGrid(roomGrid)
+			corridorStorage:debugCheckSyncWithGrid(corridorGrid)
+
+			print("	Check CorridorStorage OK")
+			corridorStorage:debugIsOk(Vector3.new(xSize, ySize, zSize), roomGrid)
+		end
+
 		local access1 = accessConnectStorage:getRandomAccessToConnect(seededRandom)
 
 		if accessConnectStorage:getToConnectSize() == 1 then
@@ -152,8 +173,8 @@ function Generator.generate(
 					getOtherAccess(accessConnectStorage, access1, newMaxProximity, newSearchDepth)
 
 				if newMaxProximity >= iMax then
-				break
-			end
+					break
+				end
 
 				i += step
 			until access2 ~= nil or i >= iMax
@@ -199,9 +220,19 @@ function Generator.generate(
 				roomStorage,
 				corridorGrid,
 				corridorStorage,
-				accessConnectStack,
+				accessConnectStorage,
 				debugMode
 			)
+
+			if debugMode then
+				print("After the collision handling")
+				print("	Check Sync")
+				corridorStorage:debugCheckSyncWithGrid(corridorGrid)
+				roomStorage:debugCheckSyncWithGrid(roomGrid)
+
+				print("	Check CorridorStorage OK")
+				corridorStorage:debugIsOk(Vector3.new(xSize, ySize, zSize), roomGrid)
+			end
 
 			if not handled then
 				accessConnectStorage:makeCantConnect(access1)
@@ -213,6 +244,17 @@ function Generator.generate(
 			corridorStorage:addCorridor(corridor)
 
 			corridor:connectToAdjacents()
+
+			if debugMode then
+				print("After the corridor is added (no collision)")
+				print("	Check Sync")
+				roomStorage:debugCheckSyncWithGrid(roomGrid)
+				corridorStorage:debugCheckSyncWithGrid(corridorGrid)
+
+				print("	Check CorridorStorage OK")
+				corridorStorage:debugIsOk(Vector3.new(xSize, ySize, zSize), roomGrid)
+			end
+		end
 
 		accessConnectStorage:makeConnected(access1)
 		accessConnectStorage:makeConnected(access2)
