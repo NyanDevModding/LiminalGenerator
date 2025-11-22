@@ -1,5 +1,6 @@
-local AccessConnectStack = require(script.Parent.Parent.Parent.gen_data.AccessConnectStack)
 local FlagGrid = require(script.Parent.Parent.Parent.gen_data.FlagGrid)
+local AccessConnectStorage =
+	require(script.Parent.Parent.Parent.gen_data.storage.AccessConnectStorage)
 local RoomStorage = require(script.Parent.Parent.Parent.gen_data.storage.RoomStorage)
 local Access = require(script.Parent.Parent.Parent.gen_elements.access.Access)
 local Room = require(script.Parent.Parent.Parent.gen_elements.room.Room)
@@ -15,7 +16,7 @@ return function(
 	seededRandom: SeededRandom.SeededRandom,
 	roomGrid: FlagGrid.FlagGrid,
 	roomStorage: RoomStorage.RoomStorage,
-	accessConnectStack: AccessConnectStack.AccessConnectStack,
+	accessConnectStorage: AccessConnectStorage.AccessConnectStorage,
 	debugMode: boolean?
 )
 	--TODO This is one of the worst shit algorithm, approximately a lot of byte of trash data and useless call, you really need to optimize this
@@ -28,7 +29,7 @@ return function(
 	local gridSize = Vector3.new(roomGrid:getXSize(), roomGrid:getYSize(), roomGrid:getZSize())
 
 	local selector = roomDataSet:startRoomSelection():selectNonTile()
-	local accessGrid = accessConnectStack:getGrid()
+	local accessGrid = accessConnectStorage:getGrid()
 
 	while roomAmount > 0 and i < TIMEOUT_AMOUNT do
 		local roomData = selector:getRandomRoom(seededRandom)
@@ -107,7 +108,7 @@ return function(
 
 		for accessNum, access in roomData:iterateAccessDatas() do
 			local accessPos = room:getPos() + access:getRelativePosition()
-			accessConnectStack:push(
+			accessConnectStorage:addAccessToConnect(
 				Access.createAccess(room, access, accessPos.X, accessPos.Y, accessPos.Z)
 			)
 		end
@@ -115,7 +116,7 @@ return function(
 		roomAmount -= 1
 
 		if debugMode then
-			coroutine.yield(roomGrid, roomStorage, nil, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, nil, accessConnectStorage)
 		end
 	end
 end

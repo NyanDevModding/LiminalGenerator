@@ -1,4 +1,3 @@
-local AccessConnectStack = require(script.Parent.Parent.Parent.Parent.gen_data.AccessConnectStack)
 local Directions = require(script.Parent.Parent.Parent.Parent.gen_data.Directions)
 local Corridor = require(script.Parent.Parent.Parent.Parent.gen_elements.corridor.Corridor)
 
@@ -7,6 +6,8 @@ local SeededRandom = require(script.Parent.Parent.Parent.SeededRandom)
 local FlagGrid = require(script.Parent.Parent.Parent.Parent.gen_data.FlagGrid)
 local FlagGridsWrapper = require(script.Parent.Parent.Parent.Parent.gen_data.FlagGridsWrapper)
 local IReadableGrid = require(script.Parent.Parent.Parent.Parent.gen_data.IReadableGrid)
+local AccessConnectStorage =
+	require(script.Parent.Parent.Parent.Parent.gen_data.storage.AccessConnectStorage)
 local CorridorStorage = require(script.Parent.Parent.Parent.Parent.gen_data.storage.CorridorStorage)
 local Access = require(script.Parent.Parent.Parent.Parent.gen_elements.access.Access)
 
@@ -20,12 +21,8 @@ local OFFSET_BFS_DIRECTIONS =
 local function swapCorridors(
 	corridor: Corridor.Corridor,
 	collisionCorridor: Corridor.Corridor,
-	genSettings: Settings.gen_settings,
-	seededRandom: SeededRandom.SeededRandom,
-	accessConnectStack: AccessConnectStack.AccessConnectStack,
 	corridorGrid: FlagGrid.FlagGrid,
-	gridWrapper: IReadableGrid.IReadableGrid,
-	corridorStorage: CorridorStorage.CorridorStorage
+	gridWrapper: IReadableGrid.IReadableGrid
 ): (Corridor.Corridor?, Corridor.Corridor?)
 	local firstAccess = corridor:createAdjacentAccess(1)
 	local secondAccess = corridor:createAdjacentAccess(2)
@@ -85,13 +82,13 @@ return function(
 	roomGrid: FlagGrid.FlagGrid,
 	corridorGrid: FlagGrid.FlagGrid,
 	corridorStorage: CorridorStorage.CorridorStorage,
-	accessConnectStack: AccessConnectStack.AccessConnectStack
+	accessConnectStorage: AccessConnectStorage.AccessConnectStorage
 )
 	-- try regenerating the corridors w/ the corridor grid and access grid in addition
 	local wrappedGrid = FlagGridsWrapper.new({
 		roomGrid,
 		corridorGrid,
-		accessConnectStack:getGrid(),
+		accessConnectStorage:getGrid(),
 	})
 
 	-- Regenerate a corridor, this time by taking into account corridors
@@ -99,16 +96,7 @@ return function(
 
 	-- Add and remove the collision corridor as it blocks the swap function
 	collisionCorridor:removeFromGrid(corridorGrid)
-	local swapped1, swapped2 = swapCorridors(
-		corridor,
-		collisionCorridor,
-		genSettings,
-		seededRandom,
-		accessConnectStack,
-		corridorGrid,
-		wrappedGrid,
-		corridorStorage
-	)
+	local swapped1, swapped2 = swapCorridors(corridor, collisionCorridor, corridorGrid, wrappedGrid)
 
 	collisionCorridor:addOnGrid(corridorGrid)
 

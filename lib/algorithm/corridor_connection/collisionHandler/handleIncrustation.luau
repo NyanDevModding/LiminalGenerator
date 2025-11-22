@@ -1,4 +1,3 @@
-local AccessConnectStack = require(script.Parent.Parent.Parent.Parent.gen_data.AccessConnectStack)
 local Directions = require(script.Parent.Parent.Parent.Parent.gen_data.Directions)
 local Corridor = require(script.Parent.Parent.Parent.Parent.gen_elements.corridor.Corridor)
 
@@ -7,6 +6,8 @@ local RoomDataSet =
 	require(script.Parent.Parent.Parent.Parent.gen_setting.room_data_set.RoomDataSet)
 local SeededRandom = require(script.Parent.Parent.Parent.SeededRandom)
 local FlagGrid = require(script.Parent.Parent.Parent.Parent.gen_data.FlagGrid)
+local AccessConnectStorage =
+	require(script.Parent.Parent.Parent.Parent.gen_data.storage.AccessConnectStorage)
 local CorridorStorage = require(script.Parent.Parent.Parent.Parent.gen_data.storage.CorridorStorage)
 local RoomStorage = require(script.Parent.Parent.Parent.Parent.gen_data.storage.RoomStorage)
 local Access = require(script.Parent.Parent.Parent.Parent.gen_elements.access.Access)
@@ -16,7 +17,7 @@ local function roomifyCorridor(
 	corridor: Corridor.Corridor,
 	roomGrid: FlagGrid.FlagGrid,
 	roomStorage: RoomStorage.RoomStorage,
-	accessGrid: FlagGrid.FlagGrid,
+	accessConnectStorage: AccessConnectStorage.AccessConnectStorage,
 	roomDataSet: RoomDataSet.RoomDataSet,
 	seededRandom: SeededRandom.SeededRandom
 )
@@ -35,18 +36,27 @@ local function roomifyCorridor(
 	roomStorage:addRoom(roomified)
 
 	-- Place the accesses
-	local access1, access2 =
-		roomified:getAccessData(1):getRelativePosition(),
-		roomified:getAccessData(2):getRelativePosition()
-	accessGrid:set(
-		roomifiedPos.X + access1.X,
-		roomifiedPos.Y + access1.Y,
-		roomifiedPos.Z + access1.Z
+	local access1Pos, access2Pos =
+		roomified:getPos() + roomified:getAccessData(1):getRelativePosition(),
+		roomified:getPos() + roomified:getAccessData(2):getRelativePosition()
+
+	accessConnectStorage:addAlreadyConnectedAccess(
+		Access.createAccess(
+			roomified,
+			roomified:getAccessData(1),
+			access1Pos.X,
+			access1Pos.Y,
+			access1Pos.Z
+		)
 	)
-	accessGrid:set(
-		roomifiedPos.X + access2.X,
-		roomifiedPos.Y + access2.Y,
-		roomifiedPos.Z + access2.Z
+	accessConnectStorage:addAlreadyConnectedAccess(
+		Access.createAccess(
+			roomified,
+			roomified:getAccessData(2),
+			access2Pos.X,
+			access2Pos.Y,
+			access2Pos.Z
+		)
 	)
 
 	return roomified
@@ -132,7 +142,7 @@ local function getDirectionNum(direction: Vector3)
 	return nil
 end
 
---TODO debug adjacents system
+--TODO debug last handleIncrustation test
 local function handleIncrustation(
 	corridor: Corridor.Corridor,
 	genSettings: Settings.gen_settings,
@@ -142,7 +152,7 @@ local function handleIncrustation(
 	roomStorage: RoomStorage.RoomStorage,
 	corridorGrid: FlagGrid.FlagGrid,
 	corridorStorage: CorridorStorage.CorridorStorage,
-	accessConnectStack: AccessConnectStack.AccessConnectStack,
+	accessConnectStorage: AccessConnectStorage.AccessConnectStorage,
 	debugMode: boolean
 )
 	local collision = corridor:getFirstCollision(corridorGrid)
@@ -283,10 +293,11 @@ local function handleIncrustation(
 		roomStorage:addRoom(room)
 		roomGrid:set(collision.X, collision.Y, collision.Z)
 
-		local accessGrid = accessConnectStack:getGrid()
 		for _, access in room:iterateAccessDatas() do
-			local entrancePos = room:getPos() + access:getRelativeEntrancePos()
-			accessGrid:set(entrancePos.X, entrancePos.Y, entrancePos.Z)
+			local accessPos = room:getPos() + access:getRelativePosition()
+			accessConnectStorage:addAlreadyConnectedAccess(
+				Access.createAccess(room, access, accessPos.X, accessPos.Y, accessPos.Z)
+			)
 		end
 
 		-- Bind the rooms
@@ -318,8 +329,6 @@ local function handleIncrustation(
 			accesses[getDirectionNum(accessData:getDirection())] =
 				Access.createAccess(room, accessData, accessPos.X, accessPos.Y, accessPos.Z)
 		end
-
-		--FIXME ERROR WHEN COLLISION CORRIDOR ISNT IN THE SAME SENS AS CORRIDOR
 
 		local newCollisionCorridor1, newCollisionCorridor2
 		-- The CollisionCorridor, unlike the corridor, divides when it doesn't
@@ -356,7 +365,7 @@ local function handleIncrustation(
 					newCollisionCorridor1,
 					roomGrid,
 					roomStorage,
-					accessGrid,
+					accessConnectStorage,
 					roomDataSet,
 					seededRandom
 				)
@@ -372,7 +381,7 @@ local function handleIncrustation(
 					newCollisionCorridor2,
 					roomGrid,
 					roomStorage,
-					accessGrid,
+					accessConnectStorage,
 					roomDataSet,
 					seededRandom
 				)
@@ -469,7 +478,7 @@ local function handleIncrustation(
 					newCollisionCorridor1,
 					roomGrid,
 					roomStorage,
-					accessGrid,
+					accessConnectStorage,
 					roomDataSet,
 					seededRandom
 				)
@@ -509,7 +518,7 @@ local function handleIncrustation(
 					newCorridor1,
 					roomGrid,
 					roomStorage,
-					accessGrid,
+					accessConnectStorage,
 					roomDataSet,
 					seededRandom
 				)
@@ -567,7 +576,7 @@ local function handleIncrustation(
 					newCorridor1,
 					roomGrid,
 					roomStorage,
-					accessGrid,
+					accessConnectStorage,
 					roomDataSet,
 					seededRandom
 				)
@@ -605,7 +614,7 @@ local function handleIncrustation(
 			roomStorage,
 			corridorGrid,
 			corridorStorage,
-			accessConnectStack,
+			accessConnectStorage,
 			debugMode
 		)
 	end

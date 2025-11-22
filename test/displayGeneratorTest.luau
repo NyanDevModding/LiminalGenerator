@@ -1,8 +1,8 @@
 local DisplayUtils = require(script.Parent.DisplayUtils)
 local Generator = require(script.Parent.Parent.LiminalGenerator.algorithm.Generator)
-local AccessConnectStack =
-	require(script.Parent.Parent.LiminalGenerator.gen_data.AccessConnectStack)
 local FlagGrid = require(script.Parent.Parent.LiminalGenerator.gen_data.FlagGrid)
+local AccessConnectStorage =
+	require(script.Parent.Parent.LiminalGenerator.gen_data.storage.AccessConnectStorage)
 local CorridorStorage =
 	require(script.Parent.Parent.LiminalGenerator.gen_data.storage.CorridorStorage)
 local RoomStorage = require(script.Parent.Parent.LiminalGenerator.gen_data.storage.RoomStorage)
@@ -22,9 +22,44 @@ return function(
 	generatorFolder.Name = "generator_test"
 	generatorFolder.Parent = workspace
 
-	local result: RoomStorage.RoomStorage
 	if deltaStepTime == 0 then
-		result = generator:generate(size.X, size.Y, size.Z, false)
+		local roomStorage, corridorStorage = generator:generate(size.X, size.Y, size.Z, false)
+
+		-- Display the rooms
+		if roomStorage ~= nil then
+			local roomGrid = FlagGrid.new(size.X, size.Y, size.Z)
+
+			for _, room in roomStorage:iterateRoom() do
+				local p1 = room:getPos()
+				local p2 = room:getPos() + room:getSize()
+				roomGrid:volumeSet(p1.X, p1.Y, p1.Z, p2.X, p2.Y, p2.Z)
+			end
+
+			local roomFolder = Instance.new("Folder")
+
+			roomFolder = DisplayUtils.createFlag2DGrid(roomGrid, worldPos, cellSize)
+			roomFolder.Name = "room_grid"
+			roomFolder.Parent = generatorFolder
+		end
+
+		-- Plot the corridors
+		if corridorStorage ~= nil then
+			local corridorFolder = Instance.new("Folder")
+			corridorFolder = DisplayUtils.plotCorridorStorage(
+				worldPos,
+				cellSize,
+				corridorStorage,
+				nil,
+				nil,
+				2,
+				0.5,
+				0.5,
+				corridorFolder
+			)
+
+			corridorFolder.Name = "corridor_grid"
+			corridorFolder.Parent = generatorFolder
+		end
 	else
 		local generatorCoroutine = coroutine.create(generator.generate)
 
@@ -44,7 +79,7 @@ return function(
 				firstIteration = false
 			end
 
-			local ok, roomGrid: FlagGrid.FlagGrid, roomStorage: RoomStorage.RoomStorage | string, corridorStorage: CorridorStorage.CorridorStorage?, accessConnectStack: AccessConnectStack.AccessConnectStack?, newCorridor: Corridor.Corridor? =
+			local ok, roomGrid: FlagGrid.FlagGrid, roomStorage: RoomStorage.RoomStorage | string, corridorStorage: CorridorStorage.CorridorStorage?, accessConnectStorage: AccessConnectStorage.AccessConnectStorage?, newCorridor: Corridor.Corridor? =
 				coroutine.resume(generatorCoroutine, generator, size.X, size.Y, size.Z, true)
 
 			if coroutine.status(generatorCoroutine) == "dead" then
@@ -54,23 +89,21 @@ return function(
 					error(roomGrid)
 				end
 
-				result = roomGrid -- as roomGrid, here, is the RoomStorage
-
 				break
 			end
-
-			print("actual AccessConnectStack size: " .. accessConnectStack:getSize())
 
 			roomGridFolder:Destroy()
 			roomGridFolder = DisplayUtils.createFlag2DGrid(roomGrid, worldPos, cellSize)
 			roomGridFolder.Name = "room_grid"
 			roomGridFolder.Parent = generatorFolder
 
-			if accessConnectStack ~= nil then
+			if accessConnectStorage ~= nil then
+				print("actual AccessToConnect size: " .. accessConnectStorage:getToConnectSize())
+
 				accessFolder:Destroy()
 
 				accessFolder = DisplayUtils.createSelective2dGrid(
-					accessConnectStack:getGrid(),
+					accessConnectStorage:getGrid(),
 					worldPos + Vector3.new(0, 0.5, 0),
 					cellSize,
 					0,
@@ -147,22 +180,4 @@ return function(
 			end
 		end
 	end
-
-	if result == nil then
-		warn("Unable to recreate the generated world as we got a nil result.")
-	end
-
-	-- Recreate the roomGrid from the RoomStorage
-	local roomGrid = FlagGrid.new(size.X, size.Y, size.Z)
-
-	for _, room in result:iterateRoom() do
-		local pos = room:getPos()
-		local maxPos = pos + room:getSize()
-
-		roomGrid:volumeSet(pos.X, pos.Y, pos.Z, maxPos.X, maxPos.Y, maxPos.Z)
-	end
-
-	local folder = DisplayUtils.createFlag2DGrid(roomGrid, worldPos, cellSize)
-	folder.Name = "generated"
-	folder.Parent = generatorFolder
 end

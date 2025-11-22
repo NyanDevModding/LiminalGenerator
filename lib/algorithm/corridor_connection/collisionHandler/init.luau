@@ -1,16 +1,17 @@
-local handleIncrustation = require(script.handleIncrustation)
-
-local AccessConnectStack = require(script.Parent.Parent.Parent.gen_data.AccessConnectStack)
 local Corridor = require(script.Parent.Parent.Parent.gen_elements.corridor.Corridor)
 
 local Settings = require(script.Parent.Parent.Parent.gen_setting.Settings)
 local RoomDataSet = require(script.Parent.Parent.Parent.gen_setting.room_data_set.RoomDataSet)
 local SeededRandom = require(script.Parent.Parent.SeededRandom)
 local FlagGrid = require(script.Parent.Parent.Parent.gen_data.FlagGrid)
+local AccessConnectStorage =
+	require(script.Parent.Parent.Parent.gen_data.storage.AccessConnectStorage)
 local CorridorStorage = require(script.Parent.Parent.Parent.gen_data.storage.CorridorStorage)
 local RoomStorage = require(script.Parent.Parent.Parent.gen_data.storage.RoomStorage)
 local Access = require(script.Parent.Parent.Parent.gen_elements.access.Access)
+
 local handleRegenerate = require(script.handleRegenerate)
+local handleIncrustation = require(script.handleIncrustation)
 
 local function handleDeadEnd(
 	corridor: Corridor.Corridor,
@@ -23,7 +24,7 @@ local function handleDeadEnd(
 	roomStorage: RoomStorage.RoomStorage,
 	corridorGrid: FlagGrid.FlagGrid,
 	corridorStorage: CorridorStorage.CorridorStorage,
-	accessConnectStack: AccessConnectStack.AccessConnectStack
+	accessConnectStorage: AccessConnectStorage.AccessConnectStorage
 )
 	local deadEndNum = corridor:getFirstVertexBefore(collision)
 
@@ -48,8 +49,6 @@ local function handleDeadEnd(
 		roomGrid:set(deadEndPos.X, deadEndPos.Y, deadEndPos.Z)
 		corridor:addOnGrid(corridorGrid)
 		corridorStorage:addCorridor(corridor)
-		accessConnectStack:push(secondAccess)
-		print(tostring(roomGrid))
 
 		return true
 	end
@@ -67,7 +66,7 @@ return function(
 	roomStorage: RoomStorage.RoomStorage,
 	corridorGrid: FlagGrid.FlagGrid,
 	corridorStorage: CorridorStorage.CorridorStorage,
-	accessConnectStack: AccessConnectStack.AccessConnectStack,
+	accessConnectStorage: AccessConnectStorage.AccessConnectStorage,
 	debugMode: boolean
 )
 	local collisionCorridor = corridorStorage:getCorridorAt(collision)
@@ -96,11 +95,11 @@ return function(
 			roomGrid,
 			corridorGrid,
 			corridorStorage,
-			accessConnectStack
+			accessConnectStorage
 		)
 	then
 		if debugMode then
-			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStorage)
 		end
 
 		return true
@@ -118,11 +117,11 @@ return function(
 			roomStorage,
 			corridorGrid,
 			corridorStorage,
-			accessConnectStack
+			accessConnectStorage
 		)
 	then
 		if debugMode then
-			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStorage)
 		end
 
 		return true
@@ -142,19 +141,19 @@ return function(
 			roomStorage,
 			corridorGrid,
 			corridorStorage,
-			accessConnectStack,
+			accessConnectStorage,
 			debugMode
 		)
 	then
 		if debugMode then
-			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStorage)
 		end
 
 		return true
 	end
 
 	if debugMode then
-		coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
+		coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStorage)
 	end
 
 	return false

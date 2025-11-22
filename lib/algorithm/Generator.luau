@@ -1,8 +1,9 @@
-local AccessConnectStack = require(script.Parent.Parent.gen_data.AccessConnectStack)
 local FlagGrid = require(script.Parent.Parent.gen_data.FlagGrid)
 local FlagGridsWrapper = require(script.Parent.Parent.gen_data.FlagGridsWrapper)
+local AccessConnectStorage = require(script.Parent.Parent.gen_data.storage.AccessConnectStorage)
 local CorridorStorage = require(script.Parent.Parent.gen_data.storage.CorridorStorage)
 local RoomStorage = require(script.Parent.Parent.gen_data.storage.RoomStorage)
+local Access = require(script.Parent.Parent.gen_elements.access.Access)
 local Settings = require(script.Parent.Parent.gen_setting.Settings)
 local RoomDataSet = require(script.Parent.Parent.gen_setting.room_data_set.RoomDataSet)
 local room_data_set_json_type =
@@ -18,6 +19,31 @@ Generator.__index = Generator
 
 export type Generator = typeof(Generator.new())
 
+local function getOtherAccess(
+	accessConnectStorage: AccessConnectStorage.AccessConnectStorage,
+	access1: Access.Access,
+	proximity: number?,
+	searchDepth: number
+): Access.Access?
+	local accessPos = Vector3.new(
+		access1.x + access1.direction.X,
+		access1.y + access1.direction.Y,
+		access1.z + access1.direction.Z
+	)
+
+	local selection = accessConnectStorage:startSelection():selectMinProximity(accessPos, 2)
+
+	if proximity ~= nil then
+		selection:selectMaxProximity(accessPos, proximity)
+	end
+
+	if searchDepth > 0 then
+		selection:selectByConnection(access1.room, searchDepth)
+	end
+
+	return selection:getAccessNot(access1)
+end
+
 function Generator.new(
 	seed: number,
 	genSettings: Settings.gen_settings,
@@ -32,6 +58,7 @@ function Generator.new(
 end
 
 local DEFAULT_ACCESS_SEARCH = 2
+local DEFAULT_ACCESS_PROXIMITY = 10
 
 function Generator.generate(
 	self: Generator,
@@ -40,16 +67,22 @@ function Generator.generate(
 	zSize: number,
 	debugMode: boolean
 )
+	local accessMaxProximity = (
+		xSize / (self._genSettings.access_connection_proximity or DEFAULT_ACCESS_PROXIMITY)
+		+ zSize / (self._genSettings.access_connection_proximity or DEFAULT_ACCESS_PROXIMITY)
+	) / 2
+	local accessSearchDepth = self._genSettings.access_search_depth or DEFAULT_ACCESS_SEARCH
+
 	local seededRandom = SeededRandom.new(self._seed)
 
 	local roomGrid = FlagGrid.new(xSize, ySize, zSize)
 	local corridorGrid = FlagGrid.new(xSize, ySize, zSize)
 
-	local accessConnectStack = AccessConnectStack.new(xSize, ySize, zSize)
+	local accessConnectStorage = AccessConnectStorage.new(xSize, ySize, zSize)
 	local roomStorage = RoomStorage.new()
 	local corridorStorage = CorridorStorage.new()
 
-	local accessAndRoomGrid = FlagGridsWrapper.new({ roomGrid, accessConnectStack:getGrid() })
+	local accessAndRoomGrid = FlagGridsWrapper.new({ roomGrid, accessConnectStorage:getGrid() })
 
 	print(
 		("Generating on a (%i, %i, %i) area\nFrom RoomDataSet: %s"):format(
@@ -67,58 +100,91 @@ function Generator.generate(
 		seededRandom,
 		roomGrid,
 		roomStorage,
-		accessConnectStack,
+		accessConnectStorage,
 		debugMode
 	)
 
 	local MAX_TIMEOUT = 1000
 
-	local deadEndsStack = AccessConnectStack.new(xSize, ySize, zSize)
-
 	-- Then connect the corridors
 	local timeout = 0
-	while not accessConnectStack:isEmpty() and timeout <= MAX_TIMEOUT do
-		local access1 = accessConnectStack:pop()
-		local access2 = accessConnectStack:popRoomDifferent(
-			access1.room,
-			self._genSettings.access_search_depth or DEFAULT_ACCESS_SEARCH
-		)
+	while not accessConnectStorage:isToConnectEmpty() and timeout <= MAX_TIMEOUT do
+		local access1 = accessConnectStorage:getRandomAccessToConnect(seededRandom)
 
+		if accessConnectStorage:getToConnectSize() == 1 then
+			accessConnectStorage:makeCantConnect(access1)
+			break
+		end
+
+		local access1Pos = Vector3.new(
+			access1.x + access1.direction.X,
+			access1.y + access1.direction.Y,
+			access1.z + access1.direction.Z
+		)
+		local access2 = accessConnectStorage
+			:startSelection()
+			:selectMinProximity(access1Pos, 2)
+			:selectMaxProximity(access1Pos, accessMaxProximity)
+			:selectByConnection(access1.room, accessSearchDepth)
+			:getAccessNot(access1)
+
+		-- Try to get accessNum2 by testing larger and larger configurations
 		if access2 == nil then
-			if accessConnectStack:isEmpty() then
+			debug.profilebegin("Searching for a second access")
+
+			local i = 2
+			local iMax = math.max(xSize - access1.x, access1.x, zSize - access1.z, access1.z)
+			local step = math.round(iMax / 10)
+
+			repeat
+				local newMaxProximity = math.round(
+					1.25 * (accessMaxProximity + (iMax - accessMaxProximity) * (i / iMax))
+				)
+
+				local newSearchDepth =
+					math.round(accessSearchDepth - accessSearchDepth * (i / iMax))
+				if newSearchDepth < 0 then
+					newSearchDepth = 0
+				end
+
+				-- Try configurations and diminuish the limits
+				access2 =
+					getOtherAccess(accessConnectStorage, access1, newMaxProximity, newSearchDepth)
+
+				if newMaxProximity >= iMax then
 				break
 			end
 
-			access2 = accessConnectStack:pop()
+				i += step
+			until access2 ~= nil or i >= iMax
+
+			debug.profileend()
+
+			-- The last try
+			if access2 == nil then
+				local lastTryAccess2 = getOtherAccess(accessConnectStorage, access1, nil, 0)
+
+				if lastTryAccess2 == nil then
+					-- Else just mark it as cant connect
+					accessConnectStorage:makeCantConnect(access1)
+					continue
+				end
+			end
 		end
 
 		timeout += 1
 
-		if
-			((access1.x - access2.x) ^ 2 + (access1.y - access2.y) ^ 2 + (access1.z - access2.z) ^ 2)
-				^ 0.5
-			<= 2
-		then
-			print("Got the accesses too close to each other")
-			accessConnectStack:repush(access1, seededRandom)
-			accessConnectStack:repush(access2, seededRandom)
-			continue
-		end
-
-		print("pathfinding")
 		local corridor = pathfinder(accessAndRoomGrid, access1, access2)
 
 		if corridor == nil then
-			deadEndsStack:push(access1)
-			deadEndsStack:push(access2)
+			accessConnectStorage:makeCantConnect(access1)
+			accessConnectStorage:makeCantConnect(access2)
 			continue
 		end
 
 		if debugMode then
-			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack, corridor)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStorage, corridor)
 		end
-
-		print("searching collision")
 
 		local collision = corridor:getFirstCollision(corridorGrid)
 
@@ -138,20 +204,21 @@ function Generator.generate(
 			)
 
 			if not handled then
-				--TODO handle deadEndStack
-				warn("Collision not handled")
-				deadEndsStack:push(access1)
-				deadEndsStack:push(access2)
+				accessConnectStorage:makeCantConnect(access1)
+				accessConnectStorage:makeCantConnect(access2)
+				continue
 			end
 		else
 			corridor:addOnGrid(corridorGrid)
 			corridorStorage:addCorridor(corridor)
 
 			corridor:connectToAdjacents()
-		end
+
+		accessConnectStorage:makeConnected(access1)
+		accessConnectStorage:makeConnected(access2)
 
 		if debugMode then
-			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStack)
+			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStorage)
 		end
 	end
 

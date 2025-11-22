@@ -6,8 +6,8 @@ local handleIncrustation =
 	require(LiminalGenerator.algorithm.corridor_connection.collisionHandler.handleIncrustation)
 
 local DisplayUtils = require(script.Parent.Parent.DisplayUtils)
-local AccessConnectStack =
-	require(script.Parent.Parent.Parent.LiminalGenerator.gen_data.AccessConnectStack)
+local AccessConnectStorage =
+	require(script.Parent.Parent.Parent.LiminalGenerator.gen_data.storage.AccessConnectStorage)
 
 local FlagGrid = require(LiminalGenerator.gen_data.FlagGrid)
 local Corridor = require(LiminalGenerator.gen_elements.corridor.Corridor)
@@ -39,7 +39,7 @@ return function(
 	local roomStorage = RoomStorage.new()
 	local corridorStorage = CorridorStorage.new()
 
-	local accessConnectStack = AccessConnectStack.new(10, 1, 10)
+	local accessConnectStorage = AccessConnectStorage.new(10, 1, 10)
 
 	local genSettings = {}
 	local roomDataSet = RoomDataSet.new(default_data_set)
@@ -399,7 +399,7 @@ return function(
 				roomStorage,
 				corridorGrid,
 				corridorStorage,
-				accessConnectStack,
+				accessConnectStorage,
 				true
 			)
 
