@@ -332,10 +332,10 @@ return function(
 		roomStorage:addRoom(testRoom5)
 		roomStorage:addRoom(testRoom6)
 
-		local testRoom7 = Room.new(Vector3.new(3, 1, 7), roomData3)
-		local testRoom8 = Room.new(Vector3.new(7, 1, 7), roomData4)
-		roomGrid:set(3, 1, 7)
-		roomGrid:set(7, 1, 7)
+		local testRoom7 = Room.new(Vector3.new(3, 1, 8), roomData3)
+		local testRoom8 = Room.new(Vector3.new(7, 1, 8), roomData4)
+		roomGrid:set(3, 1, 8)
+		roomGrid:set(7, 1, 8)
 		roomStorage:addRoom(testRoom7)
 		roomStorage:addRoom(testRoom8)
 

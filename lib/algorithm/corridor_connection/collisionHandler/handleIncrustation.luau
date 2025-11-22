@@ -529,6 +529,19 @@ local function handleIncrustation(
 				newCorridor1:connectToAdjacents()
 			end
 
+			-- Check if newCorridor2 is single cell
+			if newCorridor2:isSingleCell() then
+				roomifyCorridor(
+					newCorridor2,
+					roomGrid,
+					roomStorage,
+					accessConnectStorage,
+					roomDataSet,
+					seededRandom
+				)
+				newCorridor2 = nil
+			end
+
 			newCorridor1 = newCorridor2
 			corridor = newCorridor1
 		else
@@ -605,7 +618,7 @@ local function handleIncrustation(
 	until collision == nil or (collision - previousCollision).Magnitude ~= 1
 
 	if collision ~= nil then
-		handleIncrustation(
+		return handleIncrustation(
 			corridor,
 			genSettings,
 			roomDataSet,
