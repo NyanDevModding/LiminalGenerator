@@ -421,7 +421,7 @@ local function middleVerticesIterator(vertices, vertexNum)
 	return vertexNum, vertices[vertexNum]
 end
 
-function Corridor.iterateMiddleVertices(self: Corridor)
+function Corridor.iterateMiddleVertices(self: Corridor): ({ Vector3 }, number) -> (number?, Vector3)
 	return middleVerticesIterator, self._vertices, 1
 end
 
