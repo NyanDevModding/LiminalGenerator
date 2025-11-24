@@ -6,8 +6,6 @@ local RoomStorage = require(script.Parent.Parent.gen_data.storage.RoomStorage)
 local Access = require(script.Parent.Parent.gen_elements.access.Access)
 local Settings = require(script.Parent.Parent.gen_setting.Settings)
 local RoomDataSet = require(script.Parent.Parent.gen_setting.room_data_set.RoomDataSet)
-local room_data_set_json_type =
-	require(script.Parent.Parent.gen_setting.room_data_set.room_data_set_json_type)
 local SeededRandom = require(script.Parent.SeededRandom)
 
 local collisionHandler = require(script.Parent.corridor_connection.collisionHandler)
@@ -47,13 +45,13 @@ end
 function Generator.new(
 	seed: number,
 	genSettings: Settings.gen_settings,
-	setData: room_data_set_json_type.roomDataSetJson,
+	roomDataSet: RoomDataSet.RoomDataSet,
 	debugMode: boolean
 )
 	return setmetatable({
 		_seed = seed,
 		_genSettings = genSettings,
-		_roomDataSet = RoomDataSet.new(setData),
+		_roomDataSet = roomDataSet,
 	}, Generator)
 end
 

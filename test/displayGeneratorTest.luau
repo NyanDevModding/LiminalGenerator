@@ -7,6 +7,8 @@ local CorridorStorage =
 	require(script.Parent.Parent.LiminalGenerator.gen_data.storage.CorridorStorage)
 local RoomStorage = require(script.Parent.Parent.LiminalGenerator.gen_data.storage.RoomStorage)
 local Corridor = require(script.Parent.Parent.LiminalGenerator.gen_elements.corridor.Corridor)
+local RoomDataSet =
+	require(script.Parent.Parent.LiminalGenerator.gen_setting.room_data_set.RoomDataSet)
 
 return function(
 	worldPos: Vector3,
@@ -17,7 +19,7 @@ return function(
 	setData,
 	deltaStepTime: number
 )
-	local generator = Generator.new(seed, genSettings, setData)
+	local generator = Generator.new(seed, genSettings, RoomDataSet.new(setData))
 	local generatorFolder = Instance.new("Folder")
 	generatorFolder.Name = "generator_test"
 	generatorFolder.Parent = workspace
