@@ -31,6 +31,12 @@ function RoomSelector._refillSelection(self: RoomSelector, lastIndex: number)
 	local selection = self._selection
 	local selectionSize = 1
 
+	if selection[selectionSize] ~= nil then
+		while selection[selectionSize] ~= nil do
+			selectionSize += 1
+		end
+	end
+
 	for i = lastIndex, 1, -1 do
 		if selectionSize >= i then
 			break
