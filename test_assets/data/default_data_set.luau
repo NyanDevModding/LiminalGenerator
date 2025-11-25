@@ -1,3 +1,7 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local default_model = ReplicatedStorage.TestAssets.model.default
+
 local room_data_set_json_type = require(
 	script.Parent.Parent.Parent.LiminalGenerator.gen_setting.room_data_set.room_data_set_json_type
 )
@@ -6,6 +10,8 @@ local ComplexTileDirections =
 	require(script.Parent.Parent.Parent.LiminalGenerator.gen_setting.ComplexTileDirections)
 local SimpleTileDirections =
 	require(script.Parent.Parent.Parent.LiminalGenerator.gen_setting.SimpleTileDirections)
+
+local corridorDefaultModel = default_model.corridor.default
 
 -- BE AWARE THAT IN OUR GRID, THE POSITION OF A CELL IS ITS BOTTOM LEFT
 -- CORNER, THUS, A SIZE OF {X, Y, Z} WOULD ACTUALLY HAVE A SIZE OF
@@ -16,122 +22,22 @@ return {
 	cell_size = 5,
 	rooms = {
 		{
-			name = "single_access_single_cell",
-			size = Vector3.new(0, 0, 0),
-			accesses = {
-				{
-					type = 1,
-					direction = Directions.NORTH,
-					position = Vector3.new(0, 0, 0),
-				},
-			},
-			chance_to_spawn = 1,
-			model = nil,
-			rotate_y = true,
-		},
-		{
-			name = "corner_accesses_single_cell",
-			size = Vector3.new(0, 0, 0),
-			accesses = {
-				{
-					type = 1,
-					direction = Directions.NORTH,
-					position = Vector3.new(0, 0, 0),
-				},
-				{
-					type = 1,
-					direction = Directions.WEST,
-					position = Vector3.new(0, 0, 0),
-				},
-			},
-			chance_to_spawn = 1,
-			model = nil,
-			rotate_y = true,
-		},
-		{
-			name = "corner_accesses_single_cell",
-			size = Vector3.new(0, 0, 0),
-			accesses = {
-				{
-					type = 1,
-					direction = Directions.NORTH,
-					position = Vector3.new(0, 0, 0),
-				},
-				{
-					type = 1,
-					direction = Directions.WEST,
-					position = Vector3.new(0, 0, 0),
-				},
-			},
-			chance_to_spawn = 1,
-			model = nil,
-			rotate_y = true,
-		},
-		{
-			name = "straight_accesses_single_cell",
-			size = Vector3.new(0, 0, 0),
-			accesses = {
-				{
-					type = 1,
-					direction = Directions.NORTH,
-					position = Vector3.new(0, 0, 0),
-				},
-				{
-					type = 1,
-					direction = Directions.SOUTH,
-					position = Vector3.new(0, 0, 0),
-				},
-			},
-			chance_to_spawn = 1,
-			model = nil,
-			rotate_y = true,
-		},
-		{
-			name = "cross_accesses_single_cell",
-			size = Vector3.new(0, 0, 0),
-			accesses = {
-				{
-					type = 1,
-					direction = Directions.NORTH,
-					position = Vector3.new(0, 0, 0),
-				},
-				{
-					type = 1,
-					direction = Directions.WEST,
-					position = Vector3.new(0, 0, 0),
-				},
-				{
-					type = 1,
-					direction = Directions.SOUTH,
-					position = Vector3.new(0, 0, 0),
-				},
-				{
-					type = 1,
-					direction = Directions.EAST,
-					position = Vector3.new(0, 0, 0),
-				},
-			},
-			chance_to_spawn = 1,
-			model = nil,
-			rotate_y = false,
-		},
-		{
 			name = "long_straight_line",
-			size = Vector3.new(14, 0, 2),
+			size = Vector3.new(2, 0, 14),
 			accesses = {
 				{
 					type = 1,
-					direction = Directions.WEST,
-					position = Vector3.new(0, 0, 1),
+					direction = Directions.NORTH,
+					position = Vector3.new(1, 0, 14),
 				},
 				{
 					type = 1,
-					direction = Directions.EAST,
-					position = Vector3.new(13, 0, 1),
+					direction = Directions.SOUTH,
+					position = Vector3.new(1, 0, 0),
 				},
 			},
 			chance_to_spawn = 1,
-			model = nil,
+			model = default_model.room.long_straight_line,
 			rotate_y = true,
 		},
 		{
@@ -160,7 +66,7 @@ return {
 				},
 			},
 			chance_to_spawn = 1,
-			model = nil,
+			model = default_model.room.mid_square,
 			rotate_y = true,
 		},
 		{
@@ -178,8 +84,8 @@ return {
 					position = Vector3.new(5, 0, 0),
 				},
 			},
-			chance_to_spawn = 1,
-			model = nil,
+			chance_to_spawn = 3,
+			model = default_model.room.big_square,
 			rotate_y = true,
 		},
 	},
@@ -188,53 +94,53 @@ return {
 			[1] = {
 				simple_tiles = {
 					[SimpleTileDirections.NORTH_WEST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[SimpleTileDirections.NORTH_SOUTH] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[SimpleTileDirections.NORTH_EAST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[SimpleTileDirections.WEST_SOUTH] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[SimpleTileDirections.WEST_EAST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[SimpleTileDirections.SOUTH_EAST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 				},
 				complex_tiles = {
 					[ComplexTileDirections.NORTH_WEST_EAST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[ComplexTileDirections.WEST_SOUTH_NORTH] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[ComplexTileDirections.SOUTH_EAST_WEST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[ComplexTileDirections.EAST_NORTH_SOUTH] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[ComplexTileDirections.NORTH_WEST_SOUTH_EAST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 				},
 				dead_ends = {
 					[Directions.NORTH] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[Directions.WEST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[Directions.SOUTH] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 					[Directions.EAST] = {
-						model = nil,
+						model = corridorDefaultModel,
 					},
 				},
 			},

@@ -39,11 +39,32 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 			chanceToSpawn /= 4
 		end
 
+		local model = roomJson.model
+
+		if model == nil then
+			error(
+				(
+					"Error while building the RoomDataSet: Couldn't "
+					.. "find a model with the name: '%s'"
+				):format(roomJson.name)
+			)
+		end
+
+		if model.PrimaryPart == nil then
+			error(
+				(
+					"Error while building the RoomDataSet: Couldn't "
+					.. "find a PrimaryPart for the model: '%s'"
+				):format(roomJson.name)
+			)
+		end
+
 		local roomData = RoomData.new(
 			roomJson.name .. if roomJson.rotate_y then "_r0°" else "",
 			roomJson.size,
 			accessDatas,
-			chanceToSpawn
+			chanceToSpawn,
+			model:Clone()
 		)
 		table.insert(roomList, roomData)
 
@@ -126,11 +147,15 @@ local function readRoomSetJson(setData: room_data_set_json_type.roomDataSet)
 			-- print(newRoomAccessData)
 			-- print("\n")
 
+			local rotatedModel = model:Clone()
+			rotatedModel:PivotTo(rotatedModel:GetPivot() * rotationMatrix, 0)
+
 			local rotatedRoomData = RoomData.new(
 				roomJson.name .. "_r" .. tostring(90 * rotationNum) .. "°",
 				newRoomSize,
 				newRoomAccessData,
-				chanceToSpawn
+				chanceToSpawn,
+				rotatedModel
 			)
 			table.insert(roomList, rotatedRoomData)
 		end
@@ -159,7 +184,7 @@ local function readCorridorDataSet(
 				simpleTileData.model or DEFAULT_MODEL
 			)
 
-			table.insert(uniformTileDict.complex, tile)
+			table.insert(uniformTileDict.simple, tile)
 			table.insert(roomList, tile)
 		end
 

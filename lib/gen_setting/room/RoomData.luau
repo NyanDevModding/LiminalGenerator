@@ -9,7 +9,8 @@ function RoomData.new(
 	RoomDataName: string,
 	size: Vector3,
 	accessesData: { [number]: IAccessData.IAccessData },
-	chanceToSpawn: number
+	chanceToSpawn: number,
+	model: Model
 )
 	return setmetatable({
 		_roomDataName = RoomDataName,
@@ -17,6 +18,7 @@ function RoomData.new(
 		_accessAmount = #accessesData,
 		_accessesData = accessesData,
 		_chanceToSpawn = chanceToSpawn,
+		_model = model,
 	}, RoomData)
 end
 
@@ -62,6 +64,10 @@ end
 
 function RoomData.getAccessNumber(self: RoomData)
 	return #self._accessesData
+end
+
+function RoomData.getModel(self: RoomData)
+	return self._model
 end
 
 function RoomData.iterateAccessDatas(self: RoomData)
