@@ -18,7 +18,11 @@ function SimpleTileRoomData.new(
 	end
 
 	return setmetatable({
-		_name = ("simple_tile_type#%i_direction#{%s}"):format(accessType, tostring(direction)),
+		_name = ("simple_tile_type#%i_direction#{1:{%s}, 2:{%s}}"):format(
+			accessType,
+			tostring(direction[1]),
+			tostring(direction[2])
+		),
 		_direction = direction,
 		_accessType = accessType,
 		_thickness = thickness,
