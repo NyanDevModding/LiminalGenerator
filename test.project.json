@@ -25,6 +25,9 @@
       "StarterPlayerScripts": {
         "tests": {
           "$path": "tests.client.luau"
+        },
+        "testGenerated": {
+          "$path": "testGenerateModel.client.luau"
         }
       }
     },

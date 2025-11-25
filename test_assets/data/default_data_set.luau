@@ -11,7 +11,9 @@ local ComplexTileDirections =
 local SimpleTileDirections =
 	require(script.Parent.Parent.Parent.LiminalGenerator.gen_setting.SimpleTileDirections)
 
-local corridorDefaultModel = default_model.corridor.default
+local simple = default_model.corridor.simple
+local complex = default_model.corridor.complex
+local dead_end = default_model.corridor.dead_end
 
 -- BE AWARE THAT IN OUR GRID, THE POSITION OF A CELL IS ITS BOTTOM LEFT
 -- CORNER, THUS, A SIZE OF {X, Y, Z} WOULD ACTUALLY HAVE A SIZE OF
@@ -94,53 +96,53 @@ return {
 			[1] = {
 				simple_tiles = {
 					[SimpleTileDirections.NORTH_WEST] = {
-						model = corridorDefaultModel,
+						model = simple.nw,
 					},
 					[SimpleTileDirections.NORTH_SOUTH] = {
-						model = corridorDefaultModel,
+						model = simple.ns,
 					},
 					[SimpleTileDirections.NORTH_EAST] = {
-						model = corridorDefaultModel,
+						model = simple.ne,
 					},
 					[SimpleTileDirections.WEST_SOUTH] = {
-						model = corridorDefaultModel,
+						model = simple.ws,
 					},
 					[SimpleTileDirections.WEST_EAST] = {
-						model = corridorDefaultModel,
+						model = simple.we,
 					},
 					[SimpleTileDirections.SOUTH_EAST] = {
-						model = corridorDefaultModel,
+						model = simple.se,
 					},
 				},
 				complex_tiles = {
 					[ComplexTileDirections.NORTH_WEST_EAST] = {
-						model = corridorDefaultModel,
+						model = complex.nwe,
 					},
 					[ComplexTileDirections.WEST_SOUTH_NORTH] = {
-						model = corridorDefaultModel,
+						model = complex.wsn,
 					},
 					[ComplexTileDirections.SOUTH_EAST_WEST] = {
-						model = corridorDefaultModel,
+						model = complex.sew,
 					},
 					[ComplexTileDirections.EAST_NORTH_SOUTH] = {
-						model = corridorDefaultModel,
+						model = complex.ens,
 					},
 					[ComplexTileDirections.NORTH_WEST_SOUTH_EAST] = {
-						model = corridorDefaultModel,
+						model = complex.nwse,
 					},
 				},
 				dead_ends = {
 					[Directions.NORTH] = {
-						model = corridorDefaultModel,
+						model = dead_end.north,
 					},
 					[Directions.WEST] = {
-						model = corridorDefaultModel,
+						model = dead_end.west,
 					},
 					[Directions.SOUTH] = {
-						model = corridorDefaultModel,
+						model = dead_end.south,
 					},
 					[Directions.EAST] = {
-						model = corridorDefaultModel,
+						model = dead_end.east,
 					},
 				},
 			},
