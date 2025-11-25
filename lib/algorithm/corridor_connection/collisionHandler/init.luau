@@ -72,8 +72,8 @@ return function(
 	local collisionCorridor = corridorStorage:getCorridorAt(collision)
 
 	if collisionCorridor == nil then
-		print("fantom corridor with collision at: " .. tostring(collision))
-		print(corridorGrid)
+		warn("ghost corridor with collision at: " .. tostring(collision))
+		warn(corridorGrid)
 	end
 
 	-- The corridor is not yet written in the grid.
@@ -106,10 +106,6 @@ return function(
 	end
 
 	print("try incrustation")
-	print("	Quickly check CorridorStorage OK after try regenerate")
-	corridorStorage:debugIsOk(
-		Vector3.new(corridorGrid:getXSize(), corridorGrid:getYSize(), corridorGrid:getZSize())
-	)
 	-- try incrustation
 	if
 		handleIncrustation(
