@@ -190,6 +190,8 @@ function Generator.generate(
 					accessConnectStorage:makeCantConnect(access1)
 					continue
 				end
+
+				access2 = lastTryAccess2
 			end
 		end
 
