@@ -29,12 +29,12 @@ return {
 			accesses = {
 				{
 					type = 1,
-					direction = Directions.NORTH,
+					direction = Directions.SOUTH,
 					position = Vector3.new(1, 0, 14),
 				},
 				{
 					type = 1,
-					direction = Directions.SOUTH,
+					direction = Directions.NORTH,
 					position = Vector3.new(1, 0, 0),
 				},
 			},
@@ -48,7 +48,7 @@ return {
 			accesses = {
 				{
 					type = 1,
-					direction = Directions.NORTH,
+					direction = Directions.SOUTH,
 					position = Vector3.new(1, 0, 2),
 				},
 				{
@@ -58,7 +58,7 @@ return {
 				},
 				{
 					type = 1,
-					direction = Directions.SOUTH,
+					direction = Directions.NORTH,
 					position = Vector3.new(1, 0, 0),
 				},
 				{

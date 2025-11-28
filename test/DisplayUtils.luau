@@ -376,7 +376,7 @@ end
 
 DisplayUtils.TEST_ACCESS_1 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.EAST)
 DisplayUtils.TEST_ACCESS_2 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.WEST)
-DisplayUtils.TEST_ACCESS_3 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.NORTH)
-DisplayUtils.TEST_ACCESS_4 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.SOUTH)
+DisplayUtils.TEST_ACCESS_3 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.SOUTH)
+DisplayUtils.TEST_ACCESS_4 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.NORTH)
 
 return DisplayUtils

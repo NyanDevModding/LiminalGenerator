@@ -327,9 +327,9 @@ function Corridor.getVertexStartingDirection(self: Corridor, vertexNum: number)
 	elseif directionVect.Y < 0 then
 		return Directions.DOWN
 	elseif directionVect.Z > 0 then
-		return Directions.NORTH
-	elseif directionVect.Z < 0 then
 		return Directions.SOUTH
+	elseif directionVect.Z < 0 then
+		return Directions.NORTH
 	end
 
 	error(
@@ -350,9 +350,9 @@ function Corridor.getVertexEndingDirection(self: Corridor, vertexNum: number)
 	elseif directionVect.Y < 0 then
 		return Directions.DOWN
 	elseif directionVect.Z > 0 then
-		return Directions.NORTH
-	elseif directionVect.Z < 0 then
 		return Directions.SOUTH
+	elseif directionVect.Z < 0 then
+		return Directions.NORTH
 	end
 
 	error(
@@ -861,6 +861,7 @@ function Corridor.iterateAccessDatas(self: Corridor)
 end
 
 --TODO tranform the corridor into a bunch of rooms
+--FIXME DEBUG THIS SPAWNING ROOMS WITH WRONG DIRECTIONS
 function Corridor.roomify(
 	self: Corridor,
 	roomDataSet: RoomDataSet.RoomDataSet,
@@ -905,14 +906,29 @@ function Corridor.roomify(
 			return false
 		end
 
+		local dir1Ok = false
+		local dir2Ok = false
+
 		for _, accessData in roomData:iterateAccessDatas() do
-			if accessData:getDirection() == -firstDirection then
-				return true
+			if accessData:getDirection() == firstDirection then
+				dir1Ok = true
+
+				if dir2Ok then
+					break
+				end
 			end
 
-			if accessData:getDirection() == -secondDirection then
-				return true
+			if accessData:getDirection() == secondDirection then
+				dir2Ok = true
+
+				if dir1Ok then
+					break
+				end
 			end
+		end
+
+		if dir1Ok and dir2Ok then
+			return true
 		end
 
 		return false

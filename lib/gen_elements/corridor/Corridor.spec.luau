@@ -11,8 +11,8 @@ local Room = require(script.Parent.Parent.room.Room)
 
 local TEST_ACCESS_1 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.EAST)
 local TEST_ACCESS_2 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.WEST)
-local TEST_ACCESS_3 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.SOUTH)
--- local TEST_ACCESS_4 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.NORTH)
+local TEST_ACCESS_3 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.NORTH)
+-- local TEST_ACCESS_4 = AccessData.new(1, Vector3.new(0, 0, 0), Directions.SOUTH)
 
 local TEST_ROOM_1 = RoomData.new("test_1", Vector3.new(0, 0, 0), { TEST_ACCESS_1 })
 local TEST_ROOM_2 = RoomData.new("test_2", Vector3.new(0, 0, 0), { TEST_ACCESS_2 })
@@ -291,19 +291,19 @@ return function()
 			)
 		end)
 		it("should return the start direction of a vertex", function()
-			expect(corridor:getVertexStartingDirection(2)).to.equal(Directions.NORTH)
+			expect(corridor:getVertexStartingDirection(2)).to.equal(Directions.SOUTH)
 		end)
 		it("should return the end direction of a vertex", function()
 			expect(corridor:getVertexEndingDirection(2)).to.equal(Directions.EAST)
 		end)
 		it("should make its vertex a deadEnd", function()
 			local deadEndData =
-				DeadEndTileRoomData.new(Directions.NORTH, 1, 1, Instance.new("Model"))
+				DeadEndTileRoomData.new(Directions.SOUTH, 1, 1, Instance.new("Model"))
 
 			local vertex = corridor:getVertex(2)
 			local deadEndCorridor, deadEndRoom = corridor:makeDeadEnd(deadEndData, 2)
 
-			expect(deadEndCorridor:getAccessData(2):getDirection()).to.equal(Directions.SOUTH)
+			expect(deadEndCorridor:getAccessData(2):getDirection()).to.equal(Directions.NORTH)
 			expect(deadEndCorridor:getVertexAmount()).to.equal(2)
 			expect(deadEndCorridor:getVertex(2)).to.equal(
 				deadEndRoom:getPos() + deadEndData:getDirection()

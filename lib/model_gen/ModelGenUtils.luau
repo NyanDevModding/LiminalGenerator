@@ -169,7 +169,6 @@ local function createRoomStorageModel(
 		roomModel:PivotTo(roomModel:GetPivot() + (cellSize * (room:getPos() + room:getSize() / 2)))
 
 		roomModel.Name = "room#" .. tostring(i)
-		print(roomModel.Name .. ": " .. room:getRoomData():getName())
 		roomModel.Parent = storageModel
 	end
 
