@@ -65,6 +65,8 @@ function Generator.generate(
 	zSize: number,
 	debugMode: boolean
 )
+	local beginningDate = os.clock()
+
 	local accessMaxProximity = (
 		xSize / (self._genSettings.access_connection_proximity or DEFAULT_ACCESS_PROXIMITY)
 		+ zSize / (self._genSettings.access_connection_proximity or DEFAULT_ACCESS_PROXIMITY)
@@ -261,6 +263,9 @@ function Generator.generate(
 			coroutine.yield(roomGrid, roomStorage, corridorStorage, accessConnectStorage)
 		end
 	end
+
+	local delta = (os.clock() - beginningDate) * 1000
+	print("Succesfully generated in " .. tostring(delta) .. "ms")
 
 	return roomStorage, corridorStorage
 end
