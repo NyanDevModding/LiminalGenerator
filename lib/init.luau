@@ -1,5 +1,6 @@
 local default_data_set = require(script.Parent.TestAssets.data.default_data_set)
 local Generator = require(script.algorithm.Generator)
+local Directions = require(script.gen_data.Directions)
 local Settings = require(script.gen_setting.Settings)
 
 local RoomDataSet = require(script.gen_setting.room_data_set.RoomDataSet)
@@ -9,6 +10,8 @@ local ModelGenUtils = require(script.model_gen.ModelGenUtils)
 
 local CorridorStorage = require(script.gen_data.storage.CorridorStorage)
 local RoomStorage = require(script.gen_data.storage.RoomStorage)
+local ComplexTileDirections = require(script.gen_setting.ComplexTileDirections)
+local SimpleTileDirections = require(script.gen_setting.SimpleTileDirections)
 
 -- types
 export type room_data_set_json_type = room_data_set_json_type.roomDataSetJson
@@ -90,6 +93,10 @@ return {
 	DEFAULT_CELL_SIZE = default_data_set.cell_size,
 
 	SETTINGS = Settings,
+
+	Directions = Directions,
+	SimpleTileDirections = SimpleTileDirections,
+	ComplexTileDirections = ComplexTileDirections,
 
 	generate = generate,
 	generateModel = generateModel,
