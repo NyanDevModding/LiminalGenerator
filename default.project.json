@@ -2,13 +2,12 @@
   "name": "LiminalGenerator",
   "globIgnorePaths": [
     "**/*.spec.luau",
-    "**/*.spec.lua",
-    "test/"
+    "**/*.spec.lua"
   ],
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
-      "Shared": {
+      "LiminalGenerator": {
         "$path": "lib"
       }
     }
