@@ -1,10 +1,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Iris = require(ReplicatedStorage.Packages.iris)
 local Settings = require(ReplicatedStorage.LiminalGenerator.gen_setting.Settings)
 
+local RoomDataSet =
+	require(ReplicatedStorage.LiminalGenerator.gen_setting.room_data_set.RoomDataSet)
 local FlagGrid = require(ReplicatedStorage.LiminalGenerator.gen_data.FlagGrid)
-local Iris = require(ReplicatedStorage.Packages.iris)
 
+local testGenerateModel = require(ReplicatedStorage.Test.testGenerateModel)
 local displayGeneratorTest = require(ReplicatedStorage.Test.displayGeneratorTest)
 local displayHandleIncrustation =
 	require(ReplicatedStorage.Test.algorithm.displayHandleIncrustation)
@@ -19,6 +22,8 @@ local DATA_SET_NAMES = {
 local TEST_ROOM_DATA_SET_JSONS = {
 	[default_data_set.data_set_name] = default_data_set,
 }
+
+local generatedNum = 0
 
 -- Handle incrustation test
 local PRESETS_NAME = {
@@ -138,7 +143,7 @@ Iris:Connect(function()
 	end
 	Iris.End()
 
-	Iris.CollapsingHeader({ "Test the Generator" })
+	Iris.CollapsingHeader({ "Test the Generator with cells" })
 	do
 		local delta = Iris.State(1)
 		Iris.InputNum(
@@ -184,6 +189,56 @@ Iris:Connect(function()
 					[Settings.ACCESS_SEARCH_DEPTH] = 3,
 				}, TEST_ROOM_DATA_SET_JSONS[roomDataSetName.value], delta.value)
 			end)
+		end
+	end
+	Iris.End()
+
+	Iris.CollapsingHeader({ "Test the Generator" })
+	do
+		local worldPos = Iris.State(Vector3.new(-50 * 15, -14, -50 * 15))
+		Iris.InputVector3({ "Position of the grid" }, { number = worldPos })
+
+		local worldSize = Iris.State(Vector3.new(100, 1, 100))
+		Iris.InputVector3(
+			{ "The size of the world, please keep y = 1 for the time being" },
+			{ number = worldSize }
+		)
+
+		local cellSize = Iris.State(15)
+		Iris.InputNum({ "Size of a grid cell (15 for default roomDataSet)" }, { number = cellSize })
+
+		local seed = Iris.State(0)
+		Iris.InputNum({ "The Generation seed" }, { number = seed })
+
+		local roomAmount = Iris.State(85)
+		Iris.InputNum({ "The amount of rooms to spawn" }, { number = roomAmount })
+
+		local roomDataSetName = Iris.State(DATA_SET_NAMES[1])
+		Iris.ComboArray(
+			{ "The Room Data Set to use to generate" },
+			{ index = roomDataSetName },
+			DATA_SET_NAMES
+		)
+
+		local button = Iris.Button({ "start" })
+		if button.clicked() then
+			generatedNum += 1
+
+			local model = testGenerateModel(
+				worldPos.value,
+				cellSize.value,
+				worldSize.value,
+				seed.value,
+				RoomDataSet.new(TEST_ROOM_DATA_SET_JSONS[roomDataSetName.value]),
+				{
+					[Settings.DEAD_END_LUCK] = 512,
+					[Settings.ROOM_AMOUNT] = roomAmount.value,
+					[Settings.ACCESS_SEARCH_DEPTH] = 3,
+				}
+			)
+
+			model.Name = "generated#" .. tostring(generatedNum) .. "seed#" .. tostring(seed.value)
+			model.Parent = workspace
 		end
 	end
 	Iris.End()

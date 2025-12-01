@@ -192,7 +192,19 @@ local function createGenerated(
 	roomsModel.Parent = model
 
 	model.PrimaryPart = roomsModel.PrimaryPart
+
+	local anchor = Instance.new("Part")
+	anchor.Name = "primary"
+	anchor.Size = Vector3.zero
+	anchor.Anchored = true
+	anchor.CanCollide = false
+	anchor.Transparency = 1
+	anchor.Parent = model
+	model.PrimaryPart = anchor
+
 	model:PivotTo(CFrame.new(worldPos))
+	print("should be at " .. tostring(worldPos))
+	print("is at " .. tostring(anchor.Position))
 
 	return model
 end
